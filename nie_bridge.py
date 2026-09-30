@@ -4,7 +4,7 @@
 # Recherche personnage/technique par nom localisé via `nie.exe`. Le CLI appelle directement
 # `nie-wiki`; Blender ne réimplémente ni SQL ni la politique de données.
 #
-# Côté Rust, `crates/tools/nie-cli/src/main.rs` documente `-j/--json` de `nie vfs
+# Côté Rust, `crates/nie/nie-cli/src/main.rs` documente `-j/--json` de `nie vfs
 # find`/`chara`/`waza` comme étant destiné à ce pont.
 #
 # Panneau « nie — Recherche » (View3D > Sidebar > nie) : deux onglets, Fichiers (recherche VFS
