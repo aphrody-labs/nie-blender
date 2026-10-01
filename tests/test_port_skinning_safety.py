@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 SOURCE = Path(__file__).parents[1] / "g4_port.py"
+sys.path.insert(0, str(SOURCE.parent))
 SPEC = importlib.util.spec_from_file_location("g4_port_skinning_safety_test", SOURCE)
 PORT = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = PORT
