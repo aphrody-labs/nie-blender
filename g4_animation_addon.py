@@ -27,8 +27,11 @@ try:
     from .g4ma_motion import decode_material_motion
     from .g4cm_camera import decode_camera, parse_g4cm
     from .g4_event import (
-        event_light_parameters, load_event_actor_models, load_event_actor_points,
-        load_event_actor_point_assignments, point_assignment_for_actor,
+        event_light_parameters,
+        load_event_actor_models,
+        load_event_actor_points,
+        load_event_actor_point_assignments,
+        point_assignment_for_actor,
     )
     from .g4_p3lip import read_p3lip
 except ImportError:
@@ -39,14 +42,19 @@ except ImportError:
     from g4ma_motion import decode_material_motion
     from g4cm_camera import decode_camera, parse_g4cm
     from g4_event import (
-        event_light_parameters, load_event_actor_models, load_event_actor_points,
-        load_event_actor_point_assignments, point_assignment_for_actor,
+        event_light_parameters,
+        load_event_actor_models,
+        load_event_actor_points,
+        load_event_actor_point_assignments,
+        point_assignment_for_actor,
     )
     from g4_p3lip import read_p3lip
 
 
 ADDON_ID = __name__
 MODEL_ID_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{1,3}\d{4,10})(?![A-Za-z0-9])")
+
+
 def default_python() -> str:
     for candidate in ("/usr/bin/python3", "/opt/homebrew/bin/python3", sys.executable):
         if candidate and Path(candidate).exists():
@@ -150,7 +158,17 @@ def decode_g4mt(
     cache_root = Path(tempfile.gettempdir()) / "level5_g4mt_blender"
     cache_root.mkdir(parents=True, exist_ok=True)
     output = cache_root / f"{path.stem}_{clip.replace('/', '_')}.json"
-    command = [str(python_path), str(decoder), str(path), "--clip", clip, "--output", str(output), "--format", "json"]
+    command = [
+        str(python_path),
+        str(decoder),
+        str(path),
+        "--clip",
+        clip,
+        "--output",
+        str(output),
+        "--format",
+        "json",
+    ]
     if skeleton_path is not None:
         command.extend(("--skeleton", str(skeleton_path)))
     completed = subprocess.run(command, capture_output=True, text=True, check=False)
@@ -257,8 +275,8 @@ def model_lookup_path() -> Path | None:
 def model_relative_path(model_path: Path) -> str | None:
     parts = model_path.parts
     for index in range(len(parts) - 2):
-        if parts[index:index + 2] == ("common", "chr"):
-            return Path(*parts[index + 2:]).as_posix()
+        if parts[index : index + 2] == ("common", "chr"):
+            return Path(*parts[index + 2 :]).as_posix()
     return None
 
 
@@ -296,7 +314,11 @@ def materialize_skeleton_source(source: str) -> Path | None:
 def resolve_skeleton_path(model_path: Path | None) -> Path | None:
     if model_path is None:
         return None
-    for candidate in (model_path, model_path.with_suffix(".g4sk"), model_path.with_suffix(".g4pkm")):
+    for candidate in (
+        model_path,
+        model_path.with_suffix(".g4sk"),
+        model_path.with_suffix(".g4pkm"),
+    ):
         resolved = valid_skeleton_path(candidate)
         if resolved is not None:
             return resolved
@@ -387,16 +409,17 @@ def armature_score(obj, names: set[str]) -> int:
 
 def best_armature(objects, names: set[str]):
     candidates = [
-        obj for obj in objects
-        if obj.type == "ARMATURE"
-        and obj.constraints.get("G4 Character Part Actor") is None
+        obj
+        for obj in objects
+        if obj.type == "ARMATURE" and obj.constraints.get("G4 Character Part Actor") is None
     ]
     return max(candidates, key=lambda obj: armature_score(obj, names), default=None)
 
 
 def character_part_armatures(actor) -> list:
     return [
-        obj for obj in bpy.data.objects
+        obj
+        for obj in bpy.data.objects
         if obj.type == "ARMATURE"
         and (constraint := obj.constraints.get("G4 Character Part Actor")) is not None
         and constraint.target == actor
@@ -421,6 +444,7 @@ def animate_character_parts(
     for part_index, part_armature in enumerate(parts):
         part_progress = None
         if progress_callback is not None:
+
             def part_progress(completed, total, offset=part_index * len(motion["tracks"])):
                 progress_callback(offset + completed, len(parts) * total)
 
@@ -477,7 +501,10 @@ def event_root_motion_name(motion: dict) -> str:
         parent_is_static = True
         for samples in (parent_track or {}).get("values", {}).values():
             if samples and any(
-                any(abs(component - samples[0][axis]) > 1e-6 for axis, component in enumerate(sample))
+                any(
+                    abs(component - samples[0][axis]) > 1e-6
+                    for axis, component in enumerate(sample)
+                )
                 for sample in samples[1:]
             ):
                 parent_is_static = False
@@ -487,11 +514,15 @@ def event_root_motion_name(motion: dict) -> str:
     return ""
 
 
-def extract_event_root_motion(action, motion: dict, root_name: str, model_base_matrix: Matrix) -> int:
+def extract_event_root_motion(
+    action, motion: dict, root_name: str, model_base_matrix: Matrix
+) -> int:
     """Move the event's root-bone delta to the armature object exactly once."""
     if not root_name:
         return 0
-    track = next((item for item in motion.get("tracks") or [] if item.get("target_name") == root_name), None)
+    track = next(
+        (item for item in motion.get("tracks") or [] if item.get("target_name") == root_name), None
+    )
     rest = motion_rest_matrices(motion).get(root_name)
     frames = motion.get("frames") or []
     if track is None or rest is None or not frames:
@@ -503,11 +534,13 @@ def extract_event_root_motion(action, motion: dict, root_name: str, model_base_m
     previous_rotation = None
     for index in range(len(frames)):
         values = track["values"]
-        source = source_matrix({
-            "translation": values["translation"][index],
-            "rotation": values["rotation"][index],
-            "scale": values["scale"][index],
-        })
+        source = source_matrix(
+            {
+                "translation": values["translation"][index],
+                "rotation": values["rotation"][index],
+                "scale": values["scale"][index],
+            }
+        )
         delta = rest.inverted_safe() @ source
         # The imported model basis is local to the Armature.  Compose it on
         # the right so the event's world translation is not rotated again.
@@ -521,11 +554,20 @@ def extract_event_root_motion(action, motion: dict, root_name: str, model_base_m
         scales.append(tuple(scale))
     cache = {}
     action_frames = [1 + frame - motion["clip"]["start_frame"] for frame in frames]
-    for data_path, samples in (("location", locations), ("rotation_quaternion", rotations), ("scale", scales)):
+    for data_path, samples in (
+        ("location", locations),
+        ("rotation_quaternion", rotations),
+        ("scale", scales),
+    ):
         reduced_frames, reduced_samples = simplify_motion_samples(action_frames, samples, root_name)
         for component in range(len(reduced_samples[0])):
             append_curve_samples(
-                action, cache, data_path, component, "Event Root Motion", reduced_frames,
+                action,
+                cache,
+                data_path,
+                component,
+                "Event Root Motion",
+                reduced_frames,
                 [sample[component] for sample in reduced_samples],
             )
     action["g4_event_root_motion"] = root_name
@@ -561,7 +603,9 @@ def import_model_for_animation(
     if model_path is None:
         raise RuntimeError("Select the G4MD/G4PKM model that will receive the animation.")
     if not hasattr(bpy.ops.import_scene, "level5_g4"):
-        raise RuntimeError("Enable the separate 'Level-5 G4 Model Importer' addon before importing the model.")
+        raise RuntimeError(
+            "Enable the separate 'Level-5 G4 Model Importer' addon before importing the model."
+        )
 
     before = set(bpy.data.objects)
     original_orientation = getattr(prefs, "apply_bone_orientation", False)
@@ -604,8 +648,14 @@ def import_model_for_animation(
         align_armature_to_motion_rest(armature, motion)
     if import_character_parts:
         importer = model_importer_module()
-        attach_parts = getattr(importer, "import_character_parts_for_armature", None) if importer is not None else None
-        model_preferences = getattr(importer, "addon_preferences", None) if importer is not None else None
+        attach_parts = (
+            getattr(importer, "import_character_parts_for_armature", None)
+            if importer is not None
+            else None
+        )
+        model_preferences = (
+            getattr(importer, "addon_preferences", None) if importer is not None else None
+        )
         if attach_parts is None:
             raise RuntimeError("The Level-5 G4 Model Importer cannot attach character parts")
         model_prefs = model_preferences() if model_preferences is not None else prefs
@@ -628,8 +678,10 @@ def import_model_for_animation(
             find_ball = getattr(importer, "find_default_ball_model", None)
             attach_ball_to_armature = getattr(importer, "attach_ball_to_armature", None)
             configured_ball = Path(bpy.path.abspath(ball_model)) if ball_model else None
-            selected_ball = configured_ball if configured_ball is not None and configured_ball.is_file() else (
-                find_ball(model_path, model_prefs) if find_ball is not None else None
+            selected_ball = (
+                configured_ball
+                if configured_ball is not None and configured_ball.is_file()
+                else (find_ball(model_path, model_prefs) if find_ball is not None else None)
             )
             if selected_ball is None or attach_ball_to_armature is None:
                 raise RuntimeError("Default ball model b000001 was not found")
@@ -731,7 +783,9 @@ def blender_local_rest_matrix(pose_bone) -> Matrix:
     return bone.parent.matrix_local.inverted_safe() @ bone.matrix_local
 
 
-def append_curve_samples(action, cache: dict, data_path: str, index: int, group: str, frames, values) -> None:
+def append_curve_samples(
+    action, cache: dict, data_path: str, index: int, group: str, frames, values
+) -> None:
     if len(values) > 2 and max(values) - min(values) <= 1e-9:
         frames = (frames[0], frames[-1])
         values = (values[0], values[-1])
@@ -771,9 +825,7 @@ def append_motion_to_action(
     frames = motion["frames"]
     action_frames = [1 + source_frame - frame_origin for source_frame in frames]
     tracks_by_name = {
-        track.get("target_name"): track
-        for track in motion["tracks"]
-        if track.get("target_name")
+        track.get("target_name"): track for track in motion["tracks"] if track.get("target_name")
     }
     skeleton = motion.get("skeleton") or {}
     skeleton_names = skeleton.get("names") or []
@@ -849,7 +901,9 @@ def append_motion_to_action(
             ):
                 if path_name not in animated_paths:
                     continue
-                reduced_frames, reduced_samples = simplify_motion_samples(action_frames, samples, name)
+                reduced_frames, reduced_samples = simplify_motion_samples(
+                    action_frames, samples, name
+                )
                 component_count = len(reduced_samples[0]) if reduced_samples else 0
                 for component in range(component_count):
                     append_curve_samples(
@@ -1051,10 +1105,9 @@ class IMPORT_OT_level5_g4mt_pick_body(Operator, ImportHelper):
 
     def invoke(self, context, event):
         if not self.filepath:
-            self.filepath = (
-                expected_character_part_path(self.model_path, "u")
-                or character_parts_start_path(self.model_path)
-            )
+            self.filepath = expected_character_part_path(
+                self.model_path, "u"
+            ) or character_parts_start_path(self.model_path)
         return ImportHelper.invoke(self, context, event)
 
     def open_shoes_picker(self, body_model: str) -> None:
@@ -1096,10 +1149,9 @@ class IMPORT_OT_level5_g4mt_pick_shoes(Operator, ImportHelper):
 
     def invoke(self, context, event):
         if not self.filepath:
-            self.filepath = (
-                expected_character_part_path(self.model_path, "s")
-                or character_parts_start_path(self.model_path)
-            )
+            self.filepath = expected_character_part_path(
+                self.model_path, "s"
+            ) or character_parts_start_path(self.model_path)
         return ImportHelper.invoke(self, context, event)
 
     def finish(self, shoes_model: str) -> None:
@@ -1205,7 +1257,10 @@ class IMPORT_OT_level5_g4mt(Operator, ImportHelper):
         layout.prop(self, "clip")
         layout.prop(self, "import_model")
         if self.import_model:
-            layout.label(text="Model and character cosmetics will be requested after the animation", icon="FILE_FOLDER")
+            layout.label(
+                text="Model and character cosmetics will be requested after the animation",
+                icon="FILE_FOLDER",
+            )
         layout.prop(self, "import_camera")
         if self.import_camera:
             layout.prop(self, "set_active_camera")
@@ -1276,7 +1331,8 @@ class IMPORT_OT_level5_g4mt(Operator, ImportHelper):
             configured_model = bpy.path.abspath(self.model_path or "")
             model_path_hint = Path(configured_model) if configured_model else None
             if model_path_hint is not None and (
-                not model_path_hint.is_file() or model_path_hint.suffix.lower() not in {".g4md", ".g4pkm"}
+                not model_path_hint.is_file()
+                or model_path_hint.suffix.lower() not in {".g4md", ".g4pkm"}
             ):
                 raise RuntimeError(f"Character model not found or unsupported: {model_path_hint}")
             skeleton_model_hint = model_path_hint
@@ -1316,13 +1372,18 @@ class IMPORT_OT_level5_g4mt(Operator, ImportHelper):
                         "The selected rig has display-oriented bones and cannot reproduce G4MT axes accurately. "
                         "Import a fresh matching model or disable 'Apply Bone Orientation' when importing it."
                     )
-                self.report({"WARNING"}, "Selected rig uses display-oriented bones; importing a fresh animation-safe rig")
+                self.report(
+                    {"WARNING"},
+                    "Selected rig uses display-oriented bones; importing a fresh animation-safe rig",
+                )
                 selected = None
             armature = selected if armature_score(selected, names) > 0 else None
             model_path = None
             if armature is None and self.import_model:
                 if model_path_hint is None:
-                    raise RuntimeError("Select a Character Model or reuse a compatible selected armature")
+                    raise RuntimeError(
+                        "Select a Character Model or reuse a compatible selected armature"
+                    )
                 armature, model_path = import_model_for_animation(
                     path,
                     motion,
@@ -1362,7 +1423,9 @@ class IMPORT_OT_level5_g4mt(Operator, ImportHelper):
             def update_progress(completed, total, offset=0):
                 current = min(progress_total, offset + completed)
                 percent = 30 + round(70 * current / progress_total)
-                refresh_progress(percent, f"Importing animation: {current}/{progress_total} bone tracks")
+                refresh_progress(
+                    percent, f"Importing animation: {current}/{progress_total} bone tracks"
+                )
 
             action, keyed_bones = create_action(
                 armature,
@@ -1374,7 +1437,9 @@ class IMPORT_OT_level5_g4mt(Operator, ImportHelper):
                 armature,
                 motion,
                 frame_origin,
-                progress_callback=lambda completed, total: update_progress(completed, total, track_count),
+                progress_callback=lambda completed, total: update_progress(
+                    completed, total, track_count
+                ),
             )
             frame_count = len(motion["frames"])
             context.scene.frame_start = 1
@@ -1570,14 +1635,14 @@ def collect_event_packages(directory: Path) -> dict[str, list[Path]]:
         prefix = f"{directory.name}_"
         if not path.stem.lower().startswith(prefix.lower()):
             continue
-        payload = path.stem[len(prefix):]
+        payload = path.stem[len(prefix) :]
         cut_match = re.search(r"_(c\d+)$", payload, re.IGNORECASE)
         if cut_match is None:
             continue
-        actor_spec = payload[:cut_match.start()].lower()
+        actor_spec = payload[: cut_match.start()].lower()
         slot_match = re.search(r"_(s\d+)_p\d+$", actor_spec, re.IGNORECASE)
         slot = slot_match.group(1).lower() if slot_match else ""
-        actor = actor_spec[:slot_match.start()] if slot_match else actor_spec
+        actor = actor_spec[: slot_match.start()] if slot_match else actor_spec
         if not actor or actor == "camera" or actor.startswith("point"):
             continue
         by_actor_slot[(actor, slot)].append(path)
@@ -1619,7 +1684,9 @@ def model_lookup_row(model_path: Path) -> dict:
         models = json.loads(lookup_path.read_text(encoding="utf-8")).get("models") or {}
     except (OSError, json.JSONDecodeError):
         return {}
-    return models.get(relative) or models.get(Path(relative).with_suffix(".objbin").as_posix()) or {}
+    return (
+        models.get(relative) or models.get(Path(relative).with_suffix(".objbin").as_posix()) or {}
+    )
 
 
 def compatible_generic_actor(actor_ids: list[str], head_model: str) -> str:
@@ -1662,7 +1729,11 @@ def resolve_event_actor_models(directory: Path, prefs) -> dict[str, str]:
     event_name = directory.name
     for data_root in candidate_data_roots(directory, getattr(prefs, "raw_data_root", "")):
         base = data_root / "common" / "event_cfg" / "evt" / f"{event_name}.cfg.bin"
-        for path in (base, base.with_suffix(base.suffix + ".json"), base.with_suffix(base.suffix + ".xml")):
+        for path in (
+            base,
+            base.with_suffix(base.suffix + ".json"),
+            base.with_suffix(base.suffix + ".xml"),
+        ):
             if not path.is_file():
                 continue
             try:
@@ -1679,7 +1750,11 @@ def resolve_event_actor_points(directory: Path, prefs) -> dict[str, str]:
     for data_root in candidate_data_roots(directory, getattr(prefs, "raw_data_root", "")):
         for config_group in ("evt", "vis"):
             base = data_root / "common" / "event_cfg" / config_group / f"{event_name}.cfg.bin"
-            for path in (base, base.with_suffix(base.suffix + ".json"), base.with_suffix(base.suffix + ".xml")):
+            for path in (
+                base,
+                base.with_suffix(base.suffix + ".json"),
+                base.with_suffix(base.suffix + ".xml"),
+            ):
                 if not path.is_file():
                     continue
                 try:
@@ -1691,12 +1766,18 @@ def resolve_event_actor_points(directory: Path, prefs) -> dict[str, str]:
     return {}
 
 
-def resolve_event_actor_point_assignments(directory: Path, prefs) -> dict[str, dict[str, tuple[str, str]]]:
+def resolve_event_actor_point_assignments(
+    directory: Path, prefs
+) -> dict[str, dict[str, tuple[str, str]]]:
     event_name = directory.name
     for data_root in candidate_data_roots(directory, getattr(prefs, "raw_data_root", "")):
         for config_group in ("evt", "vis"):
             base = data_root / "common" / "event_cfg" / config_group / f"{event_name}.cfg.bin"
-            for path in (base, base.with_suffix(base.suffix + ".json"), base.with_suffix(base.suffix + ".xml")):
+            for path in (
+                base,
+                base.with_suffix(base.suffix + ".json"),
+                base.with_suffix(base.suffix + ".xml"),
+            ):
                 if not path.is_file():
                     continue
                 try:
@@ -1769,15 +1850,19 @@ def effect_g4ma_material_targets(paths: list[Path], shader_params: list[dict]) -
             slots = slots_by_material.get(material_crc)
             if not slots:
                 continue
-            resolved.append({
-                "source": str(path),
-                "material_crc": f"{material_crc:08x}",
-                "shader_params": slots,
-            })
+            resolved.append(
+                {
+                    "source": str(path),
+                    "material_crc": f"{material_crc:08x}",
+                    "shader_params": slots,
+                }
+            )
     return resolved
 
 
-def create_effect_g4ma_actions(paths: list[Path], materials_by_crc: dict[int, list[object]]) -> list[str]:
+def create_effect_g4ma_actions(
+    paths: list[Path], materials_by_crc: dict[int, list[object]]
+) -> list[str]:
     """Preserve resolved G4MA curves as Blender actions without guessing sockets."""
     action_names = []
     for path in paths:
@@ -1801,9 +1886,7 @@ def create_effect_g4ma_actions(paths: list[Path], materials_by_crc: dict[int, li
                     )
                     for curve in track["curves"]:
                         for component in range(len(curve["values"][0]) if curve["values"] else 0):
-                            property_name = (
-                                f"g4_g4ma_{track['target_hash']}_{curve['channel_index']}_{component}"
-                            )
+                            property_name = f"g4_g4ma_{track['target_hash']}_{curve['channel_index']}_{component}"
                             material[property_name] = curve["values"][0][component]
                             fcurve = action.fcurves.new(data_path=f'["{property_name}"]')
                             for frame, value in zip(motion["frames"], curve["values"]):
@@ -1857,17 +1940,21 @@ def discover_event_effects(directory: Path, prefs) -> list[dict]:
                     match.decode("ascii", errors="ignore")
                     for match in re.findall(rb"[A-Za-z0-9_./-]+\.(?:vfxo|pfxo|cfxo|gfxo)", data)
                 )
-            results.append({
-                "name": asset_directory.name,
-                "model": str(model) if model else "",
-                "particle": str(particle) if particle else "",
-                "objbin_cfg": str(objbin_cfg) if objbin_cfg else "",
-                "material_animations": [str(path) for path in material_animations],
-                "shader_params": shader_params,
-                "g4ma_material_targets": effect_g4ma_material_targets(material_animations, shader_params),
-                "shaders": sorted(shader_names),
-                "cut": cut,
-            })
+            results.append(
+                {
+                    "name": asset_directory.name,
+                    "model": str(model) if model else "",
+                    "particle": str(particle) if particle else "",
+                    "objbin_cfg": str(objbin_cfg) if objbin_cfg else "",
+                    "material_animations": [str(path) for path in material_animations],
+                    "shader_params": shader_params,
+                    "g4ma_material_targets": effect_g4ma_material_targets(
+                        material_animations, shader_params
+                    ),
+                    "shaders": sorted(shader_names),
+                    "cut": cut,
+                }
+            )
         if results:
             break
     return results
@@ -1883,9 +1970,7 @@ def discover_event_p3lip(directory: Path, prefs) -> list[Path]:
     return []
 
 
-def import_event_p3lip_controllers(
-    paths: list[Path], cut_starts: dict[str, int]
-) -> list[object]:
+def import_event_p3lip_controllers(paths: list[Path], cut_starts: dict[str, int]) -> list[object]:
     if not paths:
         return []
     collection = bpy.data.collections.new("Level-5 P3 Lip Sync")
@@ -1904,14 +1989,18 @@ def import_event_p3lip_controllers(
         action, _, duration = create_p3lip_action(controller, path, start)
         controller.animation_data.action = action
         controller["g4_p3lip_cut"] = cut
-        cursors[cut] = start + duration * (
-            bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
-        ) + 1.0
+        cursors[cut] = (
+            start
+            + duration * (bpy.context.scene.render.fps / bpy.context.scene.render.fps_base)
+            + 1.0
+        )
         controllers.append(controller)
     return controllers
 
 
-def decode_event_effect_motions(directory: Path, prefs, temporary_directory: Path) -> dict[str, dict]:
+def decode_event_effect_motions(
+    directory: Path, prefs, temporary_directory: Path
+) -> dict[str, dict]:
     skeleton = None
     for data_root in candidate_data_roots(directory, getattr(prefs, "raw_data_root", "")):
         candidate = data_root / "common" / "event" / "ev_point" / "point_eff" / "point_eff.g4sk"
@@ -1956,7 +2045,11 @@ def configure_event_effect_materials(imported: set[object]) -> list[str]:
             nodes = material.node_tree.nodes if material.use_nodes and material.node_tree else None
             if nodes is None:
                 continue
-            images = [node.image for node in nodes if node.bl_idname == "ShaderNodeTexImage" and node.image]
+            images = [
+                node.image
+                for node in nodes
+                if node.bl_idname == "ShaderNodeTexImage" and node.image
+            ]
             image = images[0] if images else None
             nodes.clear()
             links = material.node_tree.links
@@ -1989,9 +2082,7 @@ def configure_event_effect_materials(imported: set[object]) -> list[str]:
             else:
                 mix.inputs[0].default_value = 0.85
             material.surface_render_method = "DITHERED"
-            material["g4_effect_shader_family"] = (
-                "threshold" if "threshold" in name else "basic"
-            )
+            material["g4_effect_shader_family"] = "threshold" if "threshold" in name else "basic"
             material["g4_effect_blend"] = "additive"
             converted.append(material.name)
     return converted
@@ -2158,7 +2249,9 @@ def import_event_character_lighting(directory: Path, cut_starts: dict[str, int])
         if direction and len(direction) >= 3:
             vector = SOURCE_TO_BLENDER.to_3x3() @ Vector(direction[:3])
             if vector.length_squared > 1e-8:
-                light_object.rotation_euler = vector.normalized().to_track_quat("-Z", "Y").to_euler()
+                light_object.rotation_euler = (
+                    vector.normalized().to_track_quat("-Z", "Y").to_euler()
+                )
                 light_object.keyframe_insert("rotation_euler", frame=frame)
         highlight = parameters.get("charaHighLightColor")
         if highlight and len(highlight) >= 3:
@@ -2287,7 +2380,9 @@ def point_global_samples(motion: dict, target_name: str) -> list[Matrix]:
                     }
                 )
             parent = parents[index] if index < len(parents) else len(names)
-            global_matrix = resolve(parent) @ local if 0 <= parent < len(names) and parent != index else local
+            global_matrix = (
+                resolve(parent) @ local if 0 <= parent < len(names) and parent != index else local
+            )
             cache[index] = global_matrix
             return global_matrix
 
@@ -2345,7 +2440,9 @@ def append_event_placement(
     return len(matrices)
 
 
-def decode_event_package(path: Path, skeleton_path: Path | None, temporary_directory: Path) -> tuple[dict, str]:
+def decode_event_package(
+    path: Path, skeleton_path: Path | None, temporary_directory: Path
+) -> tuple[dict, str]:
     entry_name, payload = select_g4mt_entry(path.read_bytes(), "0")
     extracted = temporary_directory / f"{path.stem}.g4mt"
     extracted.write_bytes(payload)
@@ -2380,7 +2477,9 @@ def event_timeline_layout(
         raise RuntimeError("No G4MT clips found in the event packages")
 
     clips = sorted(clips_by_cut.values(), key=lambda clip: (clip["start_frame"], clip["end_frame"]))
-    overlaps = any(clip["start_frame"] <= previous["end_frame"] for previous, clip in zip(clips, clips[1:]))
+    overlaps = any(
+        clip["start_frame"] <= previous["end_frame"] for previous, clip in zip(clips, clips[1:])
+    )
     if overlaps:
         frame = 1
         cut_starts = {}
@@ -2392,10 +2491,7 @@ def event_timeline_layout(
 
     frame_origin = min(clip["start_frame"] for clip in clips)
     frame_end = max(clip["end_frame"] for clip in clips)
-    cut_starts = {
-        cut: 1 + clip["start_frame"] - frame_origin
-        for cut, clip in clips_by_cut.items()
-    }
+    cut_starts = {cut: 1 + clip["start_frame"] - frame_origin for cut, clip in clips_by_cut.items()}
     return frame_origin, frame_end, cut_starts
 
 
@@ -2497,7 +2593,9 @@ def animate_event_face_materials(
         entries = materials_by_crc.get(material_crc)
         if not entries:
             continue
-        curves = [curve for curve in source_track["curves"] if curve["channel_type"] == FACE_G4MA_CHANNEL]
+        curves = [
+            curve for curve in source_track["curves"] if curve["channel_type"] == FACE_G4MA_CHANNEL
+        ]
         if not curves:
             continue
         material = actor_local_material(entries, actor)
@@ -2603,7 +2701,9 @@ def import_event_actor(
     skeleton_path = resolve_skeleton_path(model_path)
     if skeleton_path is None and generic_actor:
         skeleton_path = resolve_generic_event_skeleton(packages[0], actor, prefs)
-    first_motion, first_entry = decode_event_package(packages[0], skeleton_path, temporary_directory)
+    first_motion, first_entry = decode_event_package(
+        packages[0], skeleton_path, temporary_directory
+    )
     if debug_log is not None:
         debug_log.append(
             f"{actor}: skeleton={skeleton_path or '<embedded/auto>'}; "
@@ -2614,7 +2714,15 @@ def import_event_actor(
         first_motion,
         prefs,
         model_path,
-        bool(body_model or shoes_model or accessory_model or gloves_model or armband_model or nameplate_model or attach_ball),
+        bool(
+            body_model
+            or shoes_model
+            or accessory_model
+            or gloves_model
+            or armband_model
+            or nameplate_model
+            or attach_ball
+        ),
         False,
         body_model,
         shoes_model,
@@ -2704,8 +2812,10 @@ def import_event_actor(
 
 def event_actor_objects(armature) -> set[object]:
     related_armatures = {
-        obj for obj in bpy.data.objects
-        if obj.type == "ARMATURE" and (
+        obj
+        for obj in bpy.data.objects
+        if obj.type == "ARMATURE"
+        and (
             obj == armature
             or any(
                 constraint.name == "G4 Character Part Actor" and constraint.target == armature
@@ -2715,8 +2825,10 @@ def event_actor_objects(armature) -> set[object]:
     }
     objects = set(related_armatures)
     objects.update(
-        obj for obj in bpy.data.objects
-        if obj.type == "MESH" and any(
+        obj
+        for obj in bpy.data.objects
+        if obj.type == "MESH"
+        and any(
             modifier.type == "ARMATURE" and modifier.object in related_armatures
             for modifier in obj.modifiers
         )
@@ -2724,7 +2836,9 @@ def event_actor_objects(armature) -> set[object]:
     return objects
 
 
-def animate_event_actor_visibility(armature, active_cuts: set[str], cut_starts: dict[str, int]) -> None:
+def animate_event_actor_visibility(
+    armature, active_cuts: set[str], cut_starts: dict[str, int]
+) -> None:
     if not cut_starts:
         return
     objects = event_actor_objects(armature)
@@ -2785,8 +2899,12 @@ def import_event_camera(
             bpy.data.objects.remove(imported, do_unlink=True)
             bpy.data.cameras.remove(camera_data)
         try:
-            add_nla_strip(camera_object, transform_track, transform_action, clip["name"], start, duration)
-            add_nla_strip(camera_object.data, lens_track, lens_action, clip["name"], start, duration)
+            add_nla_strip(
+                camera_object, transform_track, transform_action, clip["name"], start, duration
+            )
+            add_nla_strip(
+                camera_object.data, lens_track, lens_action, clip["name"], start, duration
+            )
         except RuntimeError as exc:
             raise RuntimeError(
                 f"Could not add camera strip {clip['name']} at {start} for {duration} frames"
@@ -2889,7 +3007,9 @@ def event_part_defaults_from_head(head_model: str, prefs) -> dict[str, str]:
         return {}
     body = find_part(head_path, "u", prefs)
     shoes = find_part(head_path, "s", prefs)
-    accessory = find_accessory(body, prefs) if body is not None and find_accessory is not None else None
+    accessory = (
+        find_accessory(body, prefs) if body is not None and find_accessory is not None else None
+    )
     return {
         key: str(path)
         for key, path in (("body", body), ("shoes", shoes), ("accessory", accessory))
@@ -2899,7 +3019,9 @@ def event_part_defaults_from_head(head_model: str, prefs) -> dict[str, str]:
 
 def event_accessory_from_body(body_model: str, prefs) -> str:
     importer = model_importer_module()
-    find_accessory = getattr(importer, "find_accessory_part_for_body", None) if importer is not None else None
+    find_accessory = (
+        getattr(importer, "find_accessory_part_for_body", None) if importer is not None else None
+    )
     body_path = Path(bpy.path.abspath(body_model)) if body_model else None
     if find_accessory is None or body_path is None or not body_path.is_file():
         return ""
@@ -2973,18 +3095,26 @@ class IMPORT_OT_level5_g4_event_parts(Operator):
             item.actor_ids = json.dumps([actor])
             actor_parts = dict(saved.get(actor) or {})
             if not actor_parts.get("head") and packages.get(actor):
-                default_head = resolve_model_path(packages[actor][0], getattr(prefs, "raw_data_root", ""))
+                default_head = resolve_model_path(
+                    packages[actor][0], getattr(prefs, "raw_data_root", "")
+                )
                 if default_head is not None:
                     actor_parts["head"] = str(default_head)
             if actor_parts.get("head"):
-                actor_parts.update({
-                    key: value
-                    for key, value in event_part_defaults_from_head(actor_parts["head"], prefs).items()
-                    if not actor_parts.get(key)
-                })
+                actor_parts.update(
+                    {
+                        key: value
+                        for key, value in event_part_defaults_from_head(
+                            actor_parts["head"], prefs
+                        ).items()
+                        if not actor_parts.get(key)
+                    }
+                )
             defaults = event_part_defaults(directory, actor, prefs)
             for key, value in defaults.items():
-                if not actor_parts.get(key) or key in EVENT_PART_OVERRIDES.get(directory.name, {}).get(actor, {}):
+                if not actor_parts.get(key) or key in EVENT_PART_OVERRIDES.get(
+                    directory.name, {}
+                ).get(actor, {}):
                     actor_parts[key] = value
             if "body" in EVENT_PART_OVERRIDES.get(directory.name, {}).get(actor, {}):
                 accessory = event_accessory_from_body(actor_parts.get("body", ""), prefs)
@@ -3003,7 +3133,9 @@ class IMPORT_OT_level5_g4_event_parts(Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="Configure each named actor or generic slot once. Changing Head re-fills its modular parts.")
+        layout.label(
+            text="Configure each named actor or generic slot once. Changing Head re-fills its modular parts."
+        )
         for item in self.parts:
             box = layout.box()
             box.label(text=item.actor_id, icon="ARMATURE_DATA")
@@ -3039,7 +3171,9 @@ class IMPORT_OT_level5_g4_event_parts(Operator):
                 if key == "attach_ball":
                     continue
                 path = Path(path_value) if path_value else None
-                if path is not None and (not path.is_file() or path.suffix.lower() not in {".g4md", ".g4pkm"}):
+                if path is not None and (
+                    not path.is_file() or path.suffix.lower() not in {".g4md", ".g4pkm"}
+                ):
                     self.report({"ERROR"}, f"Character part not found or unsupported: {path}")
                     return {"CANCELLED"}
             actor_ids = json.loads(item.actor_ids or "[]") or [item.actor_id]
@@ -3156,12 +3290,14 @@ class IMPORT_OT_level5_g4_event_folder(Operator):
             append_event_file_log("cancelled: no character G4PK cuts")
             self.report({"ERROR"}, f"No character G4PK cuts found in {directory}")
             return {"CANCELLED"}
-        write_event_import_log([
-            f"event={directory}",
-            "stage=event-folder-selected",
-            f"import_camera={self.import_camera}",
-            f"import_effects={self.import_effects}",
-        ])
+        write_event_import_log(
+            [
+                f"event={directory}",
+                "stage=event-folder-selected",
+                f"import_camera={self.import_camera}",
+                f"import_effects={self.import_effects}",
+            ]
+        )
         character_actors = sorted(actor for actor in packages if actor.startswith("c"))
         modular_characters = event_uses_modular_characters(directory, addon_preferences())
         append_event_file_log(
@@ -3230,7 +3366,9 @@ class IMPORT_OT_level5_g4_event_folder(Operator):
         write_event_import_log(event_log)
         try:
             actor_models = resolve_event_actor_models(directory, prefs)
-            effect_candidates = discover_event_effects(directory, prefs) if self.import_effects else []
+            effect_candidates = (
+                discover_event_effects(directory, prefs) if self.import_effects else []
+            )
             p3lip_paths = discover_event_p3lip(directory, prefs)
         except Exception as exc:
             event_log.append(f"FATAL before timeline setup: {traceback.format_exc()}")
@@ -3253,7 +3391,8 @@ class IMPORT_OT_level5_g4_event_folder(Operator):
                 )
                 effect_motions = (
                     decode_event_effect_motions(directory, prefs, temporary_directory)
-                    if self.import_effects else {}
+                    if self.import_effects
+                    else {}
                 )
                 event_log.append(f"effect_motion_cuts={len(effect_motions)}")
                 write_event_import_log(event_log)
@@ -3286,7 +3425,9 @@ class IMPORT_OT_level5_g4_event_folder(Operator):
                             nameplate_model=actor_parts.get("nameplate", ""),
                             attach_ball=bool(actor_parts.get("attach_ball", False)),
                             ball_model=actor_parts.get("ball", ""),
-                            manifest_model=actor_models.get(actor, actor_models.get(actor_base, "")),
+                            manifest_model=actor_models.get(
+                                actor, actor_models.get(actor_base, "")
+                            ),
                             debug_log=event_log,
                         )
                     except Exception as exc:
@@ -3300,7 +3441,9 @@ class IMPORT_OT_level5_g4_event_folder(Operator):
                 import_event_character_lighting(directory, cut_starts)
                 event_log.append("stage=importing-effects")
                 write_event_import_log(event_log)
-                effect_roots = import_event_effect_models(effect_candidates, effect_motions, cut_starts)
+                effect_roots = import_event_effect_models(
+                    effect_candidates, effect_motions, cut_starts
+                )
                 event_log.append(f"effect_roots={len(effect_roots)}")
                 write_event_import_log(event_log)
                 p3lip_controllers = import_event_p3lip_controllers(p3lip_paths, cut_starts)
@@ -3579,6 +3722,7 @@ classes = [
 
 
 if hasattr(bpy.types, "FileHandler"):
+
     class G4MT_FH_import(bpy.types.FileHandler):
         bl_idname = "G4MT_FH_import"
         bl_label = "Level-5 G4 Animation"
@@ -3587,7 +3731,11 @@ if hasattr(bpy.types, "FileHandler"):
 
         @classmethod
         def poll_drop(cls, context):
-            return context.area is not None and context.area.type in {"VIEW_3D", "OUTLINER", "FILE_BROWSER"}
+            return context.area is not None and context.area.type in {
+                "VIEW_3D",
+                "OUTLINER",
+                "FILE_BROWSER",
+            }
 
     classes.append(G4MT_FH_import)
 
@@ -3599,7 +3747,11 @@ if hasattr(bpy.types, "FileHandler"):
 
         @classmethod
         def poll_drop(cls, context):
-            return context.area is not None and context.area.type in {"VIEW_3D", "OUTLINER", "FILE_BROWSER"}
+            return context.area is not None and context.area.type in {
+                "VIEW_3D",
+                "OUTLINER",
+                "FILE_BROWSER",
+            }
 
     classes.append(G4CM_FH_import)
 
@@ -3611,7 +3763,11 @@ if hasattr(bpy.types, "FileHandler"):
 
         @classmethod
         def poll_drop(cls, context):
-            return context.area is not None and context.area.type in {"VIEW_3D", "OUTLINER", "FILE_BROWSER"}
+            return context.area is not None and context.area.type in {
+                "VIEW_3D",
+                "OUTLINER",
+                "FILE_BROWSER",
+            }
 
     classes.append(P3LIP_FH_import)
 

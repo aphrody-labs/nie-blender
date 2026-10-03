@@ -11,7 +11,9 @@ class PoseExportContextTests(unittest.TestCase):
         """The file browser is not a valid context for object select/apply ops."""
         tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
         exporter = next(
-            node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "export_collada"
+            node
+            for node in tree.body
+            if isinstance(node, ast.FunctionDef) and node.name == "export_collada"
         )
         body = ast.unparse(exporter)
         self.assertNotIn("bpy.ops.object.select_all", body)
@@ -21,7 +23,9 @@ class PoseExportContextTests(unittest.TestCase):
     def test_pose_export_cleans_its_private_collection_on_every_exit(self):
         source = SOURCE.read_text(encoding="utf-8")
         self.assertIn("def remove_pose_export_collection", source)
-        self.assertIn('remove_pose_export_collection(bpy.data.collections.get("__G4PoseExport"))', source)
+        self.assertIn(
+            'remove_pose_export_collection(bpy.data.collections.get("__G4PoseExport"))', source
+        )
 
     def test_successful_export_collapses_the_export_section(self):
         tree = ast.parse(SOURCE.read_text(encoding="utf-8"))
@@ -30,7 +34,11 @@ class PoseExportContextTests(unittest.TestCase):
             for node in tree.body
             if isinstance(node, ast.ClassDef) and node.name == "EXPORT_OT_level5_g4_port"
         )
-        execute = next(node for node in operator.body if isinstance(node, ast.FunctionDef) and node.name == "execute")
+        execute = next(
+            node
+            for node in operator.body
+            if isinstance(node, ast.FunctionDef) and node.name == "execute"
+        )
         self.assertIn("settings(context).show_export = False", ast.unparse(execute))
 
 

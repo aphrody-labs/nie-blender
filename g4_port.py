@@ -14,10 +14,18 @@ from pathlib import Path
 
 try:
     from g4_model_probe import dds_to_nxtch
-    from g4_joint_aliases import load_joint_alias_catalog, normalize_joint_key, resolve_catalog_alias
+    from g4_joint_aliases import (
+        load_joint_alias_catalog,
+        normalize_joint_key,
+        resolve_catalog_alias,
+    )
 except ImportError:
     from .g4_model_probe import dds_to_nxtch
-    from .g4_joint_aliases import load_joint_alias_catalog, normalize_joint_key, resolve_catalog_alias
+    from .g4_joint_aliases import (
+        load_joint_alias_catalog,
+        normalize_joint_key,
+        resolve_catalog_alias,
+    )
 
 
 DEFAULT_RAW_ROOT = Path(os.environ.get("LEVEL5_G4_RAW_ROOT", "data"))
@@ -99,7 +107,9 @@ class PortConfig:
         if self.texture_platform in candidates:
             rel = candidates[self.texture_platform]
             if not (raw_root / rel).is_file():
-                raise FileNotFoundError(f"{self.texture_platform.upper()} G4TX not found: {raw_root / rel}")
+                raise FileNotFoundError(
+                    f"{self.texture_platform.upper()} G4TX not found: {raw_root / rel}"
+                )
             return rel
         for platform in ("dx11", "nx"):
             rel = candidates[platform]
@@ -141,32 +151,101 @@ class MaterialPlan:
 
 
 COMPACT_JOINT_NAMES = (
-    "output", "c_global_0_0", "c_c_1_0", "c_c_1_1",
-    "l_s_1_0", "l_a_1_0", "l_a_1_1", "l_w_1_0", "l_wph_1_0",
-    "l_idx_1_0", "l_idx_1_1", "l_idx_1_2",
-    "l_mid_1_0", "l_mid_1_1", "l_mid_1_2",
-    "l_rng_1_0", "l_rng_1_1", "l_rng_1_2",
-    "l_thb_1_0", "l_thb_1_1", "l_thb_1_2", "l_soh_1_0",
-    "l_pky_1_0", "l_pky_1_1", "l_pky_1_2", "l_fa_1_0",
-    "l_slv2_1_0", "l_slv1_1_0", "c_n_1_0", "c_head_1_0",
-    "c_hir1_1_0", "c_hir2_1_0", "c_hir2_1_1", "c_hir2_1_2",
-    "c_hir3_1_0", "c_hir3_1_1", "c_hir4_1_0",
-    "l_hir1_1_0", "l_hir1_1_1", "l_hir2_1_0", "l_hir2_1_1",
-    "l_hir2_1_2", "l_hir3_1_0", "l_hir3_1_1", "l_hir4_1_0",
-    "r_hir1_1_0", "r_hir1_1_1", "r_hir2_1_0", "r_hir2_1_1",
-    "r_hir2_1_2", "r_hir3_1_0", "r_hir3_1_1", "r_hir4_1_0",
-    "r_s_1_0", "r_a_1_0", "r_a_1_1", "r_w_1_0", "r_wph_1_0",
-    "r_idx_1_0", "r_idx_1_1", "r_idx_1_2",
-    "r_mid_1_0", "r_mid_1_1", "r_mid_1_2",
-    "r_rng_1_0", "r_rng_1_1", "r_rng_1_2",
-    "r_thb_1_0", "r_thb_1_1", "r_thb_1_2", "r_soh_1_0",
-    "r_pky_1_0", "r_pky_1_1", "r_pky_1_2", "r_fa_1_0",
-    "r_slv2_1_0", "r_slv1_1_0",
-    "r_mnt_1_0", "r_mnt_1_1", "l_mnt_1_0", "l_mnt_1_1",
-    "c_mnt_1_0", "c_mnt_1_1",
-    "l_l_1_0", "l_l_1_1", "l_foot_1_0", "l_foot_1_1", "l_pnt_1_0",
-    "r_l_1_0", "r_l_1_1", "r_foot_1_0", "r_foot_1_1", "r_pnt_1_0",
-    "c_sht1_1_0", "c_ball_1_0",
+    "output",
+    "c_global_0_0",
+    "c_c_1_0",
+    "c_c_1_1",
+    "l_s_1_0",
+    "l_a_1_0",
+    "l_a_1_1",
+    "l_w_1_0",
+    "l_wph_1_0",
+    "l_idx_1_0",
+    "l_idx_1_1",
+    "l_idx_1_2",
+    "l_mid_1_0",
+    "l_mid_1_1",
+    "l_mid_1_2",
+    "l_rng_1_0",
+    "l_rng_1_1",
+    "l_rng_1_2",
+    "l_thb_1_0",
+    "l_thb_1_1",
+    "l_thb_1_2",
+    "l_soh_1_0",
+    "l_pky_1_0",
+    "l_pky_1_1",
+    "l_pky_1_2",
+    "l_fa_1_0",
+    "l_slv2_1_0",
+    "l_slv1_1_0",
+    "c_n_1_0",
+    "c_head_1_0",
+    "c_hir1_1_0",
+    "c_hir2_1_0",
+    "c_hir2_1_1",
+    "c_hir2_1_2",
+    "c_hir3_1_0",
+    "c_hir3_1_1",
+    "c_hir4_1_0",
+    "l_hir1_1_0",
+    "l_hir1_1_1",
+    "l_hir2_1_0",
+    "l_hir2_1_1",
+    "l_hir2_1_2",
+    "l_hir3_1_0",
+    "l_hir3_1_1",
+    "l_hir4_1_0",
+    "r_hir1_1_0",
+    "r_hir1_1_1",
+    "r_hir2_1_0",
+    "r_hir2_1_1",
+    "r_hir2_1_2",
+    "r_hir3_1_0",
+    "r_hir3_1_1",
+    "r_hir4_1_0",
+    "r_s_1_0",
+    "r_a_1_0",
+    "r_a_1_1",
+    "r_w_1_0",
+    "r_wph_1_0",
+    "r_idx_1_0",
+    "r_idx_1_1",
+    "r_idx_1_2",
+    "r_mid_1_0",
+    "r_mid_1_1",
+    "r_mid_1_2",
+    "r_rng_1_0",
+    "r_rng_1_1",
+    "r_rng_1_2",
+    "r_thb_1_0",
+    "r_thb_1_1",
+    "r_thb_1_2",
+    "r_soh_1_0",
+    "r_pky_1_0",
+    "r_pky_1_1",
+    "r_pky_1_2",
+    "r_fa_1_0",
+    "r_slv2_1_0",
+    "r_slv1_1_0",
+    "r_mnt_1_0",
+    "r_mnt_1_1",
+    "l_mnt_1_0",
+    "l_mnt_1_1",
+    "c_mnt_1_0",
+    "c_mnt_1_1",
+    "l_l_1_0",
+    "l_l_1_1",
+    "l_foot_1_0",
+    "l_foot_1_1",
+    "l_pnt_1_0",
+    "r_l_1_0",
+    "r_l_1_1",
+    "r_foot_1_0",
+    "r_foot_1_1",
+    "r_pnt_1_0",
+    "c_sht1_1_0",
+    "c_ball_1_0",
 )
 
 
@@ -210,7 +289,9 @@ def load_config(path: Path | None) -> PortConfig:
                 material_name=item["material_name"],
                 match_names=item.get("match_names", []),
                 fallback_degenerate=bool(item.get("fallback_degenerate", False)),
-                force_layout_material=tuple(layout_material) if layout_material is not None else None,
+                force_layout_material=tuple(layout_material)
+                if layout_material is not None
+                else None,
                 force_palette_flags=tuple(palette_flags) if palette_flags is not None else None,
                 force_name_index=item.get("force_name_index"),
                 uv_scale=tuple(item.get("uv_scale", [1.0, 1.0])),
@@ -279,7 +360,9 @@ def parse_g4sk(path: Path) -> dict:
     if data[:4] != b"G4SK" or len(data) < 0x40:
         raise ValueError(f"{path} is not a valid G4SK")
     joint_count = struct.unpack_from("<H", data, 0x20)[0]
-    section_offsets = [0x40 + struct.unpack_from("<H", data, 0x24 + index * 2)[0] * 4 for index in range(8)]
+    section_offsets = [
+        0x40 + struct.unpack_from("<H", data, 0x24 + index * 2)[0] * 4 for index in range(8)
+    ]
     name_table = section_offsets[7]
     if name_table + joint_count * 2 > len(data):
         raise ValueError(f"{path} has an invalid G4SK name table")
@@ -303,7 +386,10 @@ def parse_g4sk(path: Path) -> dict:
     identity = identity_matrix()
     for bind, inverse in zip(bind_matrices, inverse_bind_matrices):
         product = matrix_multiply(bind, inverse)
-        max_inverse_error = max(max_inverse_error, max(abs(value - expected) for value, expected in zip(product, identity)))
+        max_inverse_error = max(
+            max_inverse_error,
+            max(abs(value - expected) for value, expected in zip(product, identity)),
+        )
     return {
         "path": str(path),
         "joint_count": joint_count,
@@ -327,7 +413,9 @@ def resolve_expected_skeleton(model_rel: Path, raw_root: Path, chara_model: Path
     for entry in root.findall("entry"):
         if entry.get("name") != "CHARA_MODEL_INFO":
             continue
-        values = {int(node.get("index")): node.text or "" for node in entry.findall("./values/value")}
+        values = {
+            int(node.get("index")): node.text or "" for node in entry.findall("./values/value")
+        }
         if any(values.get(index, "").replace("\\", "/") in model_candidates for index in (1, 10)):
             body_id = values.get(4)
             break
@@ -338,7 +426,9 @@ def resolve_expected_skeleton(model_rel: Path, raw_root: Path, chara_model: Path
     for entry in root.findall("entry"):
         if entry.get("name") != "CHARA_BODY_INFO":
             continue
-        values = {int(node.get("index")): node.text or "" for node in entry.findall("./values/value")}
+        values = {
+            int(node.get("index")): node.text or "" for node in entry.findall("./values/value")
+        }
         if values.get(0) == body_id:
             body_path = values.get(1, "").replace("\\", "/")
             break
@@ -369,17 +459,25 @@ def validate_skeleton_palettes(
         }
     skeleton = parse_g4sk(skeleton_path)
     name_set = set(skeleton["names"])
-    required_names = [COMPACT_JOINT_NAMES[index] for index in used if index < len(COMPACT_JOINT_NAMES)]
+    required_names = [
+        COMPACT_JOINT_NAMES[index] for index in used if index < len(COMPACT_JOINT_NAMES)
+    ]
     missing_names = [name for name in required_names if name not in name_set]
     return {
-        "status": "ok" if not missing_names and skeleton["max_bind_inverse_error"] <= 1e-3 else "missing_joints" if missing_names else "invalid_bind_matrices",
+        "status": "ok"
+        if not missing_names and skeleton["max_bind_inverse_error"] <= 1e-3
+        else "missing_joints"
+        if missing_names
+        else "invalid_bind_matrices",
         "path": str(skeleton_path),
         "joint_count": skeleton["joint_count"],
         "required_names": required_names,
         "missing_names": missing_names,
         "matrix_count": skeleton["matrix_count"],
         "max_bind_inverse_error": skeleton["max_bind_inverse_error"],
-        "name_to_g4sk_index": {name: skeleton["names"].index(name) for name in required_names if name in name_set},
+        "name_to_g4sk_index": {
+            name: skeleton["names"].index(name) for name in required_names if name in name_set
+        },
     }
 
 
@@ -417,7 +515,10 @@ def pack_vertex(
     struct.pack_into("<8H", out, 0x24, *weights)
     struct.pack_into("<8B", out, 0x34, *joints)
     struct.pack_into("<4B", out, 0x3C, *(vertex.color or fallback_color))
-    local_uv = (1.0 - vertex.uv[0] if uv_flip[0] else vertex.uv[0], 1.0 - vertex.uv[1] if uv_flip[1] else vertex.uv[1])
+    local_uv = (
+        1.0 - vertex.uv[0] if uv_flip[0] else vertex.uv[0],
+        1.0 - vertex.uv[1] if uv_flip[1] else vertex.uv[1],
+    )
     uv = (local_uv[0] * uv_scale[0] + uv_offset[0], local_uv[1] * uv_scale[1] + uv_offset[1])
     u = int(round(max(0.0, min(1.0, uv[0])) * 65535.0))
     v = int(round(max(0.0, min(1.0, uv[1])) * 65535.0))
@@ -437,18 +538,24 @@ def quantize_influences(influences: list[tuple[int, float]]) -> list[tuple[int, 
     exact = [(joint, weight * 65535.0 / total) for joint, weight in selected]
     quantized = [(joint, int(value)) for joint, value in exact]
     remainder = 65535 - sum(value for _, value in quantized)
-    order = sorted(range(len(exact)), key=lambda index: exact[index][1] - quantized[index][1], reverse=True)
+    order = sorted(
+        range(len(exact)), key=lambda index: exact[index][1] - quantized[index][1], reverse=True
+    )
     for index in order[:remainder]:
         joint, value = quantized[index]
         quantized[index] = (joint, value + 1)
     return quantized
 
 
-def vector_sub(a: tuple[float, float, float], b: tuple[float, float, float]) -> tuple[float, float, float]:
+def vector_sub(
+    a: tuple[float, float, float], b: tuple[float, float, float]
+) -> tuple[float, float, float]:
     return a[0] - b[0], a[1] - b[1], a[2] - b[2]
 
 
-def vector_cross(a: tuple[float, float, float], b: tuple[float, float, float]) -> tuple[float, float, float]:
+def vector_cross(
+    a: tuple[float, float, float], b: tuple[float, float, float]
+) -> tuple[float, float, float]:
     return (
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -467,7 +574,9 @@ def vector_normalize(v: tuple[float, float, float]) -> tuple[float, float, float
     return v[0] / length, v[1] / length, v[2] / length
 
 
-def triangle_tangent_space(vertices: list[tuple]) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+def triangle_tangent_space(
+    vertices: list[tuple],
+) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
     p0, p1, p2 = (vertex[0] for vertex in vertices)
     uv0, uv1, uv2 = (vertex[2] for vertex in vertices)
     edge1 = vector_sub(p1, p0)
@@ -488,9 +597,13 @@ def vertex_tangent_space(
     tangent: tuple[float, float, float],
     bitangent: tuple[float, float, float],
 ) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
-    tangent = vector_normalize(tuple(tangent[i] - normal[i] * vector_dot(normal, tangent) for i in range(3)))
+    tangent = vector_normalize(
+        tuple(tangent[i] - normal[i] * vector_dot(normal, tangent) for i in range(3))
+    )
     handedness = -1.0 if vector_dot(vector_cross(normal, tangent), bitangent) < 0.0 else 1.0
-    return tangent, tuple(value * handedness for value in vector_normalize(vector_cross(normal, tangent)))
+    return tangent, tuple(
+        value * handedness for value in vector_normalize(vector_cross(normal, tangent))
+    )
 
 
 def calibration_mesh() -> list[Mesh]:
@@ -545,7 +658,9 @@ def parse_float_array(root: ET.Element, source_id: str) -> list[float]:
     return [float(value) for value in array.text.split()]
 
 
-def parse_float_source(root: ET.Element, source_id: str, component_hint: int | None = None) -> list[tuple[float, ...]]:
+def parse_float_source(
+    root: ET.Element, source_id: str, component_hint: int | None = None
+) -> list[tuple[float, ...]]:
     source = root.find(f".//*[@id='{source_id}']")
     if source is None:
         return []
@@ -554,9 +669,15 @@ def parse_float_source(root: ET.Element, source_id: str, component_hint: int | N
         return []
     values = [float(value) for value in array.text.split()]
     accessor = source.find(".//" + ns_name(source, "accessor"))
-    stride = int(accessor.attrib.get("stride", "1")) if accessor is not None else (component_hint or 1)
+    stride = (
+        int(accessor.attrib.get("stride", "1")) if accessor is not None else (component_hint or 1)
+    )
     offset = int(accessor.attrib.get("offset", "0")) if accessor is not None else 0
-    count = int(accessor.attrib.get("count", str(max(0, (len(values) - offset) // stride)))) if accessor is not None else len(values)
+    count = (
+        int(accessor.attrib.get("count", str(max(0, (len(values) - offset) // stride))))
+        if accessor is not None
+        else len(values)
+    )
     params = accessor.findall(ns_name(accessor, "param")) if accessor is not None else []
     component_count = len(params) or component_hint or stride
     return [
@@ -607,7 +728,12 @@ def parse_dae_skin(root: ET.Element) -> dict[str, list[tuple[tuple[str, float], 
         weights = [value[0] for value in weight_values if value]
         vcount_node = vertex_weights.find(ns_name(vertex_weights, "vcount"))
         values_node = vertex_weights.find(ns_name(vertex_weights, "v"))
-        if vcount_node is None or values_node is None or not vcount_node.text or not values_node.text:
+        if (
+            vcount_node is None
+            or values_node is None
+            or not vcount_node.text
+            or not values_node.text
+        ):
             continue
         counts = [int(value) for value in vcount_node.text.split()]
         values = [int(value) for value in values_node.text.split()]
@@ -623,7 +749,11 @@ def parse_dae_skin(root: ET.Element) -> dict[str, list[tuple[tuple[str, float], 
                     continue
                 joint_index = packed[joint_offset]
                 weight_index = packed[weight_offset]
-                if joint_index < len(joint_names) and weight_index < len(weights) and weights[weight_index] > 0.0:
+                if (
+                    joint_index < len(joint_names)
+                    and weight_index < len(weights)
+                    and weights[weight_index] > 0.0
+                ):
                     influences.append((joint_names[joint_index], weights[weight_index]))
             influences.sort(key=lambda item: item[1], reverse=True)
             vertex_influences.append(tuple(influences[:8]))
@@ -690,8 +820,14 @@ def sidecar_skin_for_geometry(
     if not sidecar_meshes:
         return None
     used_sidecar_indices = used_sidecar_indices if used_sidecar_indices is not None else set()
-    available = [mesh for mesh in sidecar_meshes if int(mesh.get("_sidecar_index", -1)) not in used_sidecar_indices]
-    exact_names = sidecar_exact_names(geometry.attrib.get("id", "")) | sidecar_exact_names(geometry.attrib.get("name", ""))
+    available = [
+        mesh
+        for mesh in sidecar_meshes
+        if int(mesh.get("_sidecar_index", -1)) not in used_sidecar_indices
+    ]
+    exact_names = sidecar_exact_names(geometry.attrib.get("id", "")) | sidecar_exact_names(
+        geometry.attrib.get("name", "")
+    )
     candidates = [
         mesh
         for mesh in available
@@ -713,7 +849,9 @@ def sidecar_skin_for_geometry(
         and int(mesh.get("vertex_count", -1)) == vertex_count
     ]
     if not candidates:
-        candidates = [mesh for mesh in available if int(mesh.get("vertex_count", -1)) == vertex_count]
+        candidates = [
+            mesh for mesh in available if int(mesh.get("vertex_count", -1)) == vertex_count
+        ]
     if candidates:
         chosen = candidates[0]
         used_sidecar_indices.add(int(chosen.get("_sidecar_index", -1)))
@@ -736,7 +874,11 @@ def identity_matrix() -> tuple[float, ...]:
 
 
 def matrix_multiply(a: tuple[float, ...], b: tuple[float, ...]) -> tuple[float, ...]:
-    return tuple(sum(a[row * 4 + k] * b[k * 4 + column] for k in range(4)) for row in range(4) for column in range(4))
+    return tuple(
+        sum(a[row * 4 + k] * b[k * 4 + column] for k in range(4))
+        for row in range(4)
+        for column in range(4)
+    )
 
 
 def collada_matrix(values: list[float]) -> tuple[float, ...]:
@@ -745,30 +887,68 @@ def collada_matrix(values: list[float]) -> tuple[float, ...]:
     return tuple(values[column * 4 + row] for row in range(4) for column in range(4))
 
 
-def transform_point(matrix: tuple[float, ...], point: tuple[float, float, float]) -> tuple[float, float, float]:
+def transform_point(
+    matrix: tuple[float, ...], point: tuple[float, float, float]
+) -> tuple[float, float, float]:
     x, y, z = point
-    return tuple(matrix[row * 4] * x + matrix[row * 4 + 1] * y + matrix[row * 4 + 2] * z + matrix[row * 4 + 3] for row in range(3))  # type: ignore[return-value]
+    return tuple(
+        matrix[row * 4] * x
+        + matrix[row * 4 + 1] * y
+        + matrix[row * 4 + 2] * z
+        + matrix[row * 4 + 3]
+        for row in range(3)
+    )  # type: ignore[return-value]
 
 
-def transform_direction(matrix: tuple[float, ...], direction: tuple[float, float, float]) -> tuple[float, float, float]:
+def transform_direction(
+    matrix: tuple[float, ...], direction: tuple[float, float, float]
+) -> tuple[float, float, float]:
     x, y, z = direction
-    return vector_normalize(tuple(matrix[row * 4] * x + matrix[row * 4 + 1] * y + matrix[row * 4 + 2] * z for row in range(3)))  # type: ignore[arg-type,return-value]
+    return vector_normalize(
+        tuple(
+            matrix[row * 4] * x + matrix[row * 4 + 1] * y + matrix[row * 4 + 2] * z
+            for row in range(3)
+        )
+    )  # type: ignore[arg-type,return-value]
 
 
-def transform_normal(matrix: tuple[float, ...], normal: tuple[float, float, float]) -> tuple[float, float, float]:
+def transform_normal(
+    matrix: tuple[float, ...], normal: tuple[float, float, float]
+) -> tuple[float, float, float]:
     a, b, c, d, e, f, g, h, i = (
-        matrix[0], matrix[1], matrix[2], matrix[4], matrix[5], matrix[6], matrix[8], matrix[9], matrix[10]
+        matrix[0],
+        matrix[1],
+        matrix[2],
+        matrix[4],
+        matrix[5],
+        matrix[6],
+        matrix[8],
+        matrix[9],
+        matrix[10],
     )
     determinant = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
     if abs(determinant) <= 1e-12:
         return transform_direction(matrix, normal)
     inverse_transpose = (
-        (e * i - f * h) / determinant, (f * g - d * i) / determinant, (d * h - e * g) / determinant,
-        (c * h - b * i) / determinant, (a * i - c * g) / determinant, (b * g - a * h) / determinant,
-        (b * f - c * e) / determinant, (c * d - a * f) / determinant, (a * e - b * d) / determinant,
+        (e * i - f * h) / determinant,
+        (f * g - d * i) / determinant,
+        (d * h - e * g) / determinant,
+        (c * h - b * i) / determinant,
+        (a * i - c * g) / determinant,
+        (b * g - a * h) / determinant,
+        (b * f - c * e) / determinant,
+        (c * d - a * f) / determinant,
+        (a * e - b * d) / determinant,
     )
     x, y, z = normal
-    return vector_normalize(tuple(inverse_transpose[row * 3] * x + inverse_transpose[row * 3 + 1] * y + inverse_transpose[row * 3 + 2] * z for row in range(3)))  # type: ignore[arg-type,return-value]
+    return vector_normalize(
+        tuple(
+            inverse_transpose[row * 3] * x
+            + inverse_transpose[row * 3 + 1] * y
+            + inverse_transpose[row * 3 + 2] * z
+            for row in range(3)
+        )
+    )  # type: ignore[arg-type,return-value]
 
 
 def dae_geometry_transforms(root: ET.Element) -> dict[str, tuple[float, ...]]:
@@ -785,20 +965,47 @@ def dae_geometry_transforms(root: ET.Element) -> dict[str, tuple[float, ...]]:
             if local_name == "matrix" and values:
                 local = matrix_multiply(local, collada_matrix(values))
             elif local_name == "translate" and len(values) == 3:
-                local = matrix_multiply(local, (1, 0, 0, values[0], 0, 1, 0, values[1], 0, 0, 1, values[2], 0, 0, 0, 1))
+                local = matrix_multiply(
+                    local, (1, 0, 0, values[0], 0, 1, 0, values[1], 0, 0, 1, values[2], 0, 0, 0, 1)
+                )
             elif local_name == "scale" and len(values) == 3:
-                local = matrix_multiply(local, (values[0], 0, 0, 0, 0, values[1], 0, 0, 0, 0, values[2], 0, 0, 0, 0, 1))
+                local = matrix_multiply(
+                    local, (values[0], 0, 0, 0, 0, values[1], 0, 0, 0, 0, values[2], 0, 0, 0, 0, 1)
+                )
             elif local_name == "rotate" and len(values) == 4:
                 x, y, z = vector_normalize((values[0], values[1], values[2]))
-                angle = math.radians(values[3]); c, s, t = math.cos(angle), math.sin(angle), 1.0 - math.cos(angle)
-                local = matrix_multiply(local, (t*x*x+c, t*x*y-s*z, t*x*z+s*y, 0, t*x*y+s*z, t*y*y+c, t*y*z-s*x, 0, t*x*z-s*y, t*y*z+s*x, t*z*z+c, 0, 0, 0, 0, 1))
+                angle = math.radians(values[3])
+                c, s, t = math.cos(angle), math.sin(angle), 1.0 - math.cos(angle)
+                local = matrix_multiply(
+                    local,
+                    (
+                        t * x * x + c,
+                        t * x * y - s * z,
+                        t * x * z + s * y,
+                        0,
+                        t * x * y + s * z,
+                        t * y * y + c,
+                        t * y * z - s * x,
+                        0,
+                        t * x * z - s * y,
+                        t * y * z + s * x,
+                        t * z * z + c,
+                        0,
+                        0,
+                        0,
+                        0,
+                        1,
+                    ),
+                )
         world = matrix_multiply(parent, local)
         for instance_name in ("instance_geometry", "instance_controller"):
             for instance in node.findall(ns_name(node, instance_name)):
                 target = source_ref(instance.attrib.get("url", ""))
                 previous = transforms.get(target)
                 if previous is not None and previous != world:
-                    raise ValueError(f"geometry/controller {target!r} is instanced with multiple transforms")
+                    raise ValueError(
+                        f"geometry/controller {target!r} is instanced with multiple transforms"
+                    )
                 transforms[target] = world
         for child in node.findall(ns_name(node, "node")):
             visit(child, world)
@@ -878,10 +1085,14 @@ def parse_dae(
                 vertices_map[vertices.attrib["id"]] = source_ref(position_input.attrib["source"])
 
         position_sources = list(vertices_map.values())
-        position_count = len(parse_float_source(root, position_sources[0], 3)) if position_sources else 0
+        position_count = (
+            len(parse_float_source(root, position_sources[0], 3)) if position_sources else 0
+        )
         sidecar_skin = None
         if not skin_influences:
-            sidecar_skin = sidecar_skin_for_geometry(sidecar_meshes, geometry, position_count, used_sidecar_indices)
+            sidecar_skin = sidecar_skin_for_geometry(
+                sidecar_meshes, geometry, position_count, used_sidecar_indices
+            )
         if sidecar_skin is not None:
             skin_influences = sidecar_skin
 
@@ -893,8 +1104,14 @@ def parse_dae(
                     source = source_ref(input_node.attrib.get("source", ""))
                     if semantic == "VERTEX":
                         source = vertices_map.get(source, source)
-                    texcoord_set = int(input_node.attrib.get("set", "0")) if semantic.startswith("TEXCOORD") else 0
-                    inputs.append((semantic, source, int(input_node.attrib.get("offset", "0")), texcoord_set))
+                    texcoord_set = (
+                        int(input_node.attrib.get("set", "0"))
+                        if semantic.startswith("TEXCOORD")
+                        else 0
+                    )
+                    inputs.append(
+                        (semantic, source, int(input_node.attrib.get("offset", "0")), texcoord_set)
+                    )
                 stride = max((item[2] for item in inputs), default=0) + 1
                 data_node = primitive.find(ns_name(primitive, "p"))
                 if data_node is None or not data_node.text:
@@ -914,7 +1131,11 @@ def parse_dae(
                     source: parse_float_source(
                         root,
                         source,
-                        2 if semantic.startswith("TEXCOORD") else 3 if semantic in {"VERTEX", "POSITION", "NORMAL"} else None,
+                        2
+                        if semantic.startswith("TEXCOORD")
+                        else 3
+                        if semantic in {"VERTEX", "POSITION", "NORMAL"}
+                        else None,
                     )
                     for semantic, source, _, _ in inputs
                 }
@@ -933,10 +1154,20 @@ def parse_dae(
                         for semantic, source, offset, texcoord_set in inputs:
                             index = packed[offset]
                             values = sources.get(source, [])
-                            if semantic in {"VERTEX", "POSITION"} and index < len(values) and len(values[index]) >= 3:
+                            if (
+                                semantic in {"VERTEX", "POSITION"}
+                                and index < len(values)
+                                and len(values[index]) >= 3
+                            ):
                                 pos = transform_point(geometry_transform, tuple(values[index][:3]))  # type: ignore[arg-type]
-                            elif semantic == "NORMAL" and index < len(values) and len(values[index]) >= 3:
-                                normal = transform_normal(geometry_transform, tuple(values[index][:3]))  # type: ignore[arg-type]
+                            elif (
+                                semantic == "NORMAL"
+                                and index < len(values)
+                                and len(values[index]) >= 3
+                            ):
+                                normal = transform_normal(
+                                    geometry_transform, tuple(values[index][:3])
+                                )  # type: ignore[arg-type]
                             elif (
                                 semantic.startswith("TEXCOORD")
                                 and texcoord_set == preferred_texcoord_set
@@ -944,8 +1175,21 @@ def parse_dae(
                                 and len(values[index]) >= 2
                             ):
                                 uv = (values[index][0], values[index][1])
-                        position_index = packed[next((offset for semantic, _, offset, _ in inputs if semantic in {"VERTEX", "POSITION"}), 0)]
-                        influences = skin_influences[position_index] if position_index < len(skin_influences) else ()
+                        position_index = packed[
+                            next(
+                                (
+                                    offset
+                                    for semantic, _, offset, _ in inputs
+                                    if semantic in {"VERTEX", "POSITION"}
+                                ),
+                                0,
+                            )
+                        ]
+                        influences = (
+                            skin_influences[position_index]
+                            if position_index < len(skin_influences)
+                            else ()
+                        )
                         face_indices.append((pos, normal, uv, influences))
                     if len(face_indices) < 3:
                         continue
@@ -957,7 +1201,11 @@ def parse_dae(
                                 vector_sub(tri_vertices[2][0], tri_vertices[0][0]),
                             )
                         )
-                        tangent, bitangent = triangle_tangent_space(tri_vertices) if generate_tangents else (None, None)
+                        tangent, bitangent = (
+                            triangle_tangent_space(tri_vertices)
+                            if generate_tangents
+                            else (None, None)
+                        )
                         tri_indices = []
                         for pos, normal, uv, influences in tri_vertices:
                             vertex_normal = vector_normalize(normal or fallback_normal)
@@ -966,7 +1214,9 @@ def parse_dae(
                                 if tangent is not None and bitangent is not None
                                 else (None, None)
                             )
-                            vertex = Vertex(pos, vertex_normal, uv, influences, vertex_tangent, vertex_bitangent)
+                            vertex = Vertex(
+                                pos, vertex_normal, uv, influences, vertex_tangent, vertex_bitangent
+                            )
                             key = (
                                 vertex.position,
                                 vertex.normal,
@@ -993,7 +1243,15 @@ def parse_dae(
                         or geometry.attrib.get("id")
                         or material_name
                     )
-                    meshes.append(Mesh(mesh_name, vertices, indices, material_indices[material_name], material_name))
+                    meshes.append(
+                        Mesh(
+                            mesh_name,
+                            vertices,
+                            indices,
+                            material_indices[material_name],
+                            material_name,
+                        )
+                    )
     return meshes or calibration_mesh()
 
 
@@ -1033,36 +1291,76 @@ def build_g4mg(
     records = []
     for mesh_index, mesh in enumerate(meshes):
         vertex_offset = len(buf)
-        uv_scale = record_rules[mesh_index].uv_scale if record_rules is not None and mesh_index < len(record_rules) else (1.0, 1.0)
-        uv_offset = record_rules[mesh_index].uv_offset if record_rules is not None and mesh_index < len(record_rules) else (0.0, 0.0)
+        uv_scale = (
+            record_rules[mesh_index].uv_scale
+            if record_rules is not None and mesh_index < len(record_rules)
+            else (1.0, 1.0)
+        )
+        uv_offset = (
+            record_rules[mesh_index].uv_offset
+            if record_rules is not None and mesh_index < len(record_rules)
+            else (0.0, 0.0)
+        )
         record_uv_flip = (
             record_rules[mesh_index].uv_flip
-            if record_rules is not None and mesh_index < len(record_rules) and record_rules[mesh_index].uv_flip is not None
+            if record_rules is not None
+            and mesh_index < len(record_rules)
+            and record_rules[mesh_index].uv_flip is not None
             else uv_flip
         )
-        rule = record_rules[mesh_index] if record_rules is not None and mesh_index < len(record_rules) else None
-        palette = palettes[mesh_index] if palettes is not None and mesh_index < len(palettes) else []
+        rule = (
+            record_rules[mesh_index]
+            if record_rules is not None and mesh_index < len(record_rules)
+            else None
+        )
+        palette = (
+            palettes[mesh_index] if palettes is not None and mesh_index < len(palettes) else []
+        )
         resolved = [
             resolve_vertex_influences(
-                vertex, palette, rule, joint_aliases or {}, native_joint_indices, stabilize_finger_weights
+                vertex,
+                palette,
+                rule,
+                joint_aliases or {},
+                native_joint_indices,
+                stabilize_finger_weights,
             )
             for vertex in mesh.vertices
         ]
         unresolved = sum(item[1] for item in resolved)
-        fallback_color = fallback_colors[mesh_index] if fallback_colors and mesh_index < len(fallback_colors) else (255, 255, 255, 255)
+        fallback_color = (
+            fallback_colors[mesh_index]
+            if fallback_colors and mesh_index < len(fallback_colors)
+            else (255, 255, 255, 255)
+        )
         for vertex, (influences, _) in zip(mesh.vertices, resolved):
             adjusted_vertex = vertex
             if (joint_position_offsets or joint_position_transforms) and influences:
                 offset = [0.0, 0.0, 0.0]
-                names_by_index = {index: name for name, index in (native_joint_indices or {}).items()}
+                names_by_index = {
+                    index: name for name, index in (native_joint_indices or {}).items()
+                }
                 for local_joint, weight in influences:
-                    name = names_by_index.get(palette[local_joint]) if local_joint < len(palette) else None
+                    name = (
+                        names_by_index.get(palette[local_joint])
+                        if local_joint < len(palette)
+                        else None
+                    )
                     transform = (joint_position_transforms or {}).get(name or "")
                     if transform is not None:
                         transformed = (
-                            transform[0] * vertex.position[0] + transform[1] * vertex.position[1] + transform[2] * vertex.position[2] + transform[3],
-                            transform[4] * vertex.position[0] + transform[5] * vertex.position[1] + transform[6] * vertex.position[2] + transform[7],
-                            transform[8] * vertex.position[0] + transform[9] * vertex.position[1] + transform[10] * vertex.position[2] + transform[11],
+                            transform[0] * vertex.position[0]
+                            + transform[1] * vertex.position[1]
+                            + transform[2] * vertex.position[2]
+                            + transform[3],
+                            transform[4] * vertex.position[0]
+                            + transform[5] * vertex.position[1]
+                            + transform[6] * vertex.position[2]
+                            + transform[7],
+                            transform[8] * vertex.position[0]
+                            + transform[9] * vertex.position[1]
+                            + transform[10] * vertex.position[2]
+                            + transform[11],
                         )
                         for axis in range(3):
                             offset[axis] += (transformed[axis] - vertex.position[axis]) * weight
@@ -1075,19 +1373,30 @@ def build_g4mg(
                 if any(offset):
                     adjusted_vertex = Vertex(
                         tuple(vertex.position[axis] + offset[axis] for axis in range(3)),
-                        vertex.normal, vertex.uv, vertex.influences, vertex.tangent, vertex.bitangent,
-                        vertex.color, vertex.color_from_source,
+                        vertex.normal,
+                        vertex.uv,
+                        vertex.influences,
+                        vertex.tangent,
+                        vertex.bitangent,
+                        vertex.color,
+                        vertex.color_from_source,
                     )
-            buf.extend(pack_vertex(adjusted_vertex, influences, record_uv_flip, uv_scale, uv_offset, fallback_color))
-        records.append({
-            "vertex_offset": vertex_offset,
-            "vertex_count": len(mesh.vertices),
-            "weighted_vertices": sum(bool(vertex.influences) for vertex in mesh.vertices),
-            "unresolved_influences": unresolved,
-            "palette": palette,
-            "source_color_vertices": sum(vertex.color_from_source for vertex in mesh.vertices),
-            "fallback_color": list(fallback_color),
-        })
+            buf.extend(
+                pack_vertex(
+                    adjusted_vertex, influences, record_uv_flip, uv_scale, uv_offset, fallback_color
+                )
+            )
+        records.append(
+            {
+                "vertex_offset": vertex_offset,
+                "vertex_count": len(mesh.vertices),
+                "weighted_vertices": sum(bool(vertex.influences) for vertex in mesh.vertices),
+                "unresolved_influences": unresolved,
+                "palette": palette,
+                "source_color_vertices": sum(vertex.color_from_source for vertex in mesh.vertices),
+                "fallback_color": list(fallback_color),
+            }
+        )
     vertex_buffer_size = len(buf)
     append_aligned(buf, 0x40)
     index_base = len(buf)
@@ -1117,7 +1426,7 @@ def realign_g4mg_index_buffer(md: bytes, mg: bytes) -> tuple[bytes, bytes]:
     repaired = bytearray(mg[:vertex_size])
     append_aligned(repaired, 0x40)
     repaired_base = len(repaired)
-    repaired.extend(mg[index_base:index_base + index_size])
+    repaired.extend(mg[index_base : index_base + index_size])
     append_aligned(repaired, 0x40)
     repaired_md = bytearray(md)
     struct.pack_into("<I", repaired_md, 0x5C, repaired_base)
@@ -1125,16 +1434,25 @@ def realign_g4mg_index_buffer(md: bytes, mg: bytes) -> tuple[bytes, bytes]:
 
 
 def transfer_native_vertex_colors(
-    meshes: list[Mesh], native_colors: list[list[tuple[tuple[float, float, float], tuple[int, int, int, int]]]],
+    meshes: list[Mesh],
+    native_colors: list[list[tuple[tuple[float, float, float], tuple[int, int, int, int]]]],
     fallback_colors: list[tuple[int, int, int, int]],
 ) -> None:
     for mesh_index, mesh in enumerate(meshes):
         colors = native_colors[mesh_index] if mesh_index < len(native_colors) else []
-        fallback = fallback_colors[mesh_index] if mesh_index < len(fallback_colors) else (255, 255, 255, 255)
+        fallback = (
+            fallback_colors[mesh_index]
+            if mesh_index < len(fallback_colors)
+            else (255, 255, 255, 255)
+        )
         for vertex in mesh.vertices:
             if vertex.color_from_source:
                 continue
-            closest = min(colors, key=lambda item: sum((a - b) ** 2 for a, b in zip(vertex.position, item[0])), default=None)
+            closest = min(
+                colors,
+                key=lambda item: sum((a - b) ** 2 for a, b in zip(vertex.position, item[0])),
+                default=None,
+            )
             vertex.color = closest[1] if closest is not None else fallback
 
 
@@ -1157,13 +1475,22 @@ def compact_joint_index(
     target = resolve_catalog_alias(name, catalog)
     if not target:
         compact_aliases = {
-            "spine01": "c_c_1_1", "spine02": "c_c_1_1",
-            "r_index01": "r_idx_1_0", "r_index02": "r_idx_1_1", "r_index03": "r_idx_1_2",
-            "l_index01": "l_idx_1_0", "l_index02": "l_idx_1_1", "l_index03": "l_idx_1_2",
-            "l_arm_roll": "l_a_1_0", "l_arm_roll_02": "l_a_1_0",
-            "r_arm_roll": "r_a_1_0", "r_arm_roll_02": "r_a_1_0",
-            "l_hand_roll": "l_a_1_1", "l_hand_roll_02": "l_a_1_1",
-            "r_hand_roll": "r_a_1_1", "r_hand_roll_02": "r_a_1_1",
+            "spine01": "c_c_1_1",
+            "spine02": "c_c_1_1",
+            "r_index01": "r_idx_1_0",
+            "r_index02": "r_idx_1_1",
+            "r_index03": "r_idx_1_2",
+            "l_index01": "l_idx_1_0",
+            "l_index02": "l_idx_1_1",
+            "l_index03": "l_idx_1_2",
+            "l_arm_roll": "l_a_1_0",
+            "l_arm_roll_02": "l_a_1_0",
+            "r_arm_roll": "r_a_1_0",
+            "r_arm_roll_02": "r_a_1_0",
+            "l_hand_roll": "l_a_1_1",
+            "l_hand_roll_02": "l_a_1_1",
+            "r_hand_roll": "r_a_1_1",
+            "r_hand_roll_02": "r_a_1_1",
         }
         target = compact_aliases.get(normalize_joint_key(name), "")
     if target and target != name:
@@ -1177,7 +1504,9 @@ def compact_joint_index(
 
 
 def rigid_local_joint(
-    rule: RecordRule | None, palette: list[int], aliases: dict[str, str | int] | None = None,
+    rule: RecordRule | None,
+    palette: list[int],
+    aliases: dict[str, str | int] | None = None,
     native_joint_indices: dict[str, int] | None = None,
 ) -> int:
     if rule is None or rule.rigid_joint is None:
@@ -1185,13 +1514,17 @@ def rigid_local_joint(
     global_joint = (
         rule.rigid_joint
         if isinstance(rule.rigid_joint, int)
-        else compact_joint_index(rule.rigid_joint, aliases, native_joint_indices=native_joint_indices)
+        else compact_joint_index(
+            rule.rigid_joint, aliases, native_joint_indices=native_joint_indices
+        )
     )
     if global_joint is None:
         raise ValueError(f"unknown compact joint {rule.rigid_joint!r}")
     global_joint = palette_compatible_joint(global_joint, palette, native_joint_indices or {})
     if global_joint is None:
-        raise ValueError(f"joint {rule.rigid_joint!r} ({global_joint}) is not present in native palette {palette}")
+        raise ValueError(
+            f"joint {rule.rigid_joint!r} ({global_joint}) is not present in native palette {palette}"
+        )
     return palette.index(global_joint)
 
 
@@ -1212,7 +1545,9 @@ def resolve_vertex_influences(
         global_joint = compact_joint_index(name, aliases, native_joint_indices=native_joint_indices)
         global_joint = palette_compatible_joint(global_joint, palette, native_joint_indices or {})
         if stabilize_finger_weights and global_joint is not None:
-            finger = re.fullmatch(r"([lr])_(?:idx|mid|rng|thb|pky)_1_[0-2]", joint_names.get(global_joint, ""))
+            finger = re.fullmatch(
+                r"([lr])_(?:idx|mid|rng|thb|pky)_1_[0-2]", joint_names.get(global_joint, "")
+            )
             if finger:
                 wrist = (native_joint_indices or {}).get(f"{finger.group(1)}_w_1_0")
                 if wrist in palette:
@@ -1233,13 +1568,17 @@ def resolve_vertex_influences(
             raise ValueError(
                 f"secondary_weight_scale for {rule.output_name} must be between 0 and 1"
             )
-        anchor_joint = rule.weight_anchor_joint if rule.weight_anchor_joint is not None else rule.rigid_joint
+        anchor_joint = (
+            rule.weight_anchor_joint if rule.weight_anchor_joint is not None else rule.rigid_joint
+        )
         if anchor_joint is None:
             raise ValueError(
                 f"record {rule.output_name} needs weight_anchor_joint or rigid_joint when damping weights"
             )
         anchor_global = (
-            anchor_joint if isinstance(anchor_joint, int) else compact_joint_index(anchor_joint, aliases)
+            anchor_joint
+            if isinstance(anchor_joint, int)
+            else compact_joint_index(anchor_joint, aliases)
         )
         if anchor_global is None or anchor_global not in palette:
             raise ValueError(f"weight anchor {anchor_joint!r} is not present in palette {palette}")
@@ -1269,10 +1608,12 @@ def native_record_palettes(md: bytes) -> list[list[int]]:
         palette_start = struct.unpack_from("<H", md, off + 0x3A)[0]
         flags = struct.unpack_from("<H", md, off + 0x3C)[0]
         palette_length = flags & 0xFF if flags & 0x100 else 0
-        palettes.append([
-            struct.unpack_from("<H", md, palette_table + (palette_start + index) * 2)[0]
-            for index in range(palette_length)
-        ])
+        palettes.append(
+            [
+                struct.unpack_from("<H", md, palette_table + (palette_start + index) * 2)[0]
+                for index in range(palette_length)
+            ]
+        )
     return palettes
 
 
@@ -1332,8 +1673,12 @@ def configured_record_palettes(
         used_joints: set[int] = set()
         for vertex in mesh.vertices:
             for joint_name, _ in vertex.influences:
-                resolved = compact_joint_index(joint_name, aliases, native_joint_indices=native_joint_indices)
-                compatible = palette_compatible_joint(resolved, native_palette, native_joint_indices or {})
+                resolved = compact_joint_index(
+                    joint_name, aliases, native_joint_indices=native_joint_indices
+                )
+                compatible = palette_compatible_joint(
+                    resolved, native_palette, native_joint_indices or {}
+                )
                 if compatible is not None:
                     resolved = compatible
                 if resolved is not None:
@@ -1362,9 +1707,15 @@ def configured_record_palettes(
             continue
         palette: list[int] = []
         for joint in rule.palette_joints:
-            resolved = joint if isinstance(joint, int) else compact_joint_index(joint, aliases, native_joint_indices=native_joint_indices)
+            resolved = (
+                joint
+                if isinstance(joint, int)
+                else compact_joint_index(joint, aliases, native_joint_indices=native_joint_indices)
+            )
             if resolved is None:
-                raise ValueError(f"unknown compact joint {joint!r} in palette for {rule.output_name}")
+                raise ValueError(
+                    f"unknown compact joint {joint!r} in palette for {rule.output_name}"
+                )
             if not 0 <= resolved < 0x10000:
                 raise ValueError(f"joint index {resolved} is outside uint16 range")
             if resolved not in palette:
@@ -1380,7 +1731,11 @@ def compact_palettes(palettes: list[list[int]]) -> tuple[list[int], list[int]]:
     starts: list[int] = []
     for palette in palettes:
         start = next(
-            (index for index in range(len(table) - len(palette) + 1) if table[index : index + len(palette)] == palette),
+            (
+                index
+                for index in range(len(table) - len(palette) + 1)
+                if table[index : index + len(palette)] == palette
+            ),
             None,
         )
         if start is None:
@@ -1408,7 +1763,9 @@ def rewrite_joint_palettes(md: bytes, palettes: list[list[int]]) -> bytes:
         value = struct.unpack_from("<H", md, field)[0]
         absolute = name_base + value * 4
         if value and absolute >= mesh_name_table:
-            raise ValueError(f"cannot safely move unknown trailing table referenced by header field 0x{field:02X}")
+            raise ValueError(
+                f"cannot safely move unknown trailing table referenced by header field 0x{field:02X}"
+            )
 
     palette_entries, palette_starts = compact_palettes(palettes)
     palette_bytes = b"".join(struct.pack("<H", joint) for joint in palette_entries)
@@ -1444,7 +1801,9 @@ def validate_generated_model(md: bytes, mg: bytes) -> dict:
     checked_indices = 0
     for mesh_index in range(mesh_count):
         off = header_size + mesh_index * 0x50
-        vertex_offset, index_offset, vertex_count, index_count = struct.unpack_from("<IIII", md, off)
+        vertex_offset, index_offset, vertex_count, index_count = struct.unpack_from(
+            "<IIII", md, off
+        )
         flags = struct.unpack_from("<H", md, off + 0x3C)[0]
         stride = struct.unpack_from("<H", md, off + 0x3E)[0] & 0xFF
         palette_length = flags & 0xFF if flags & 0x100 else 0
@@ -1452,17 +1811,27 @@ def validate_generated_model(md: bytes, mg: bytes) -> dict:
             raise ValueError(f"record {mesh_index} vertex range exceeds generated vertex buffer")
         if index_offset + index_count * 2 > index_buffer_size:
             raise ValueError(f"record {mesh_index} index range exceeds generated index buffer")
-        indices = struct.unpack_from("<" + "H" * index_count, mg, index_base + index_offset) if index_count else ()
+        indices = (
+            struct.unpack_from("<" + "H" * index_count, mg, index_base + index_offset)
+            if index_count
+            else ()
+        )
         if any(index >= vertex_count for index in indices):
-            raise ValueError(f"record {mesh_index} contains an index outside its local vertex range")
+            raise ValueError(
+                f"record {mesh_index} contains an index outside its local vertex range"
+            )
         for vertex_index in range(vertex_count):
             vertex = vertex_offset + vertex_index * stride
             weights = struct.unpack_from("<8H", mg, vertex + 0x24)
             joints = struct.unpack_from("<8B", mg, vertex + 0x34)
             if sum(weights) != 0xFFFF:
-                raise ValueError(f"record {mesh_index} vertex {vertex_index} weights do not sum to 65535")
+                raise ValueError(
+                    f"record {mesh_index} vertex {vertex_index} weights do not sum to 65535"
+                )
             if any(joint >= palette_length for joint, weight in zip(joints, weights) if weight):
-                raise ValueError(f"record {mesh_index} vertex {vertex_index} references outside its joint palette")
+                raise ValueError(
+                    f"record {mesh_index} vertex {vertex_index} references outside its joint palette"
+                )
         checked_vertices += vertex_count
         checked_indices += index_count
     return {
@@ -1478,7 +1847,9 @@ def mesh_match_rank(mesh: Mesh, rule: RecordRule) -> int:
     if "*" in rule.match_names:
         return 1
     mesh_names = {mesh.name, clean_symbol(mesh.name)}
-    rule_names = {name for match_name in rule.match_names for name in (match_name, clean_symbol(match_name))}
+    rule_names = {
+        name for match_name in rule.match_names for name in (match_name, clean_symbol(match_name))
+    }
     material = mesh.material_name.lower()
     if mesh_names & rule_names or material in {name.lower() for name in rule.match_names}:
         return 2
@@ -1492,7 +1863,9 @@ def mesh_matches_rule(mesh: Mesh, rule: RecordRule) -> bool:
     return mesh_match_rank(mesh, rule) > 0
 
 
-def source_uv_transform(mesh: Mesh, rule: RecordRule) -> tuple[tuple[float, float], tuple[float, float]]:
+def source_uv_transform(
+    mesh: Mesh, rule: RecordRule
+) -> tuple[tuple[float, float], tuple[float, float]]:
     transforms = rule.source_uv_transforms or {}
     exact_names = {mesh.name, clean_symbol(mesh.name)}
     for key, transform in transforms.items():
@@ -1509,7 +1882,9 @@ def source_uv_transform(mesh: Mesh, rule: RecordRule) -> tuple[tuple[float, floa
     return (1.0, 1.0), (0.0, 0.0)
 
 
-def transformed_source_vertex(vertex: Vertex, scale: tuple[float, float], offset: tuple[float, float]) -> Vertex:
+def transformed_source_vertex(
+    vertex: Vertex, scale: tuple[float, float], offset: tuple[float, float]
+) -> Vertex:
     if scale == (1.0, 1.0) and offset == (0.0, 0.0):
         return vertex
     # Source materials use repeating UVs (notably Tsubasa's neck/ear sheet has
@@ -1519,12 +1894,20 @@ def transformed_source_vertex(vertex: Vertex, scale: tuple[float, float], offset
     local_uv = tuple(value - math.floor(value) for value in vertex.uv)
     uv = (local_uv[0] * scale[0] + offset[0], local_uv[1] * scale[1] + offset[1])
     return Vertex(
-        vertex.position, vertex.normal, uv, vertex.influences, vertex.tangent, vertex.bitangent,
-        vertex.color, vertex.color_from_source,
+        vertex.position,
+        vertex.normal,
+        uv,
+        vertex.influences,
+        vertex.tangent,
+        vertex.bitangent,
+        vertex.color,
+        vertex.color_from_source,
     )
 
 
-def split_mesh_by_vertex_limit(mesh: Mesh, output_names: list[str], max_vertices: int = 0xFFFF) -> list[Mesh]:
+def split_mesh_by_vertex_limit(
+    mesh: Mesh, output_names: list[str], max_vertices: int = 0xFFFF
+) -> list[Mesh]:
     chunks: list[Mesh] = []
     vertices: list[Vertex] = []
     indices: list[int] = []
@@ -1534,8 +1917,16 @@ def split_mesh_by_vertex_limit(mesh: Mesh, output_names: list[str], max_vertices
         nonlocal vertices, indices, remap
         if not vertices:
             return
-        name = output_names[len(chunks)] if len(chunks) < len(output_names) else f"{mesh.name}_{len(chunks)}"
-        chunks.append(Mesh(name, vertices, indices, mesh.material_index, mesh.material_name, mesh.source_names))
+        name = (
+            output_names[len(chunks)]
+            if len(chunks) < len(output_names)
+            else f"{mesh.name}_{len(chunks)}"
+        )
+        chunks.append(
+            Mesh(
+                name, vertices, indices, mesh.material_index, mesh.material_name, mesh.source_names
+            )
+        )
         vertices = []
         indices = []
         remap = {}
@@ -1572,17 +1963,24 @@ def merged_native_meshes(meshes: list[Mesh], config: PortConfig) -> list[Mesh]:
         for part in parts:
             base = len(vertices)
             scale, offset = source_uv_transform(part, rule)
-            uv_transform_trace.append({
-                "source": part.name,
-                "material": part.material_name,
-                "scale": list(scale),
-                "offset": list(offset),
-                "input_uv_bounds": [
-                    [min((vertex.uv[axis] for vertex in part.vertices), default=0.0), max((vertex.uv[axis] for vertex in part.vertices), default=0.0)]
-                    for axis in range(2)
-                ],
-            })
-            vertices.extend(transformed_source_vertex(vertex, scale, offset) for vertex in part.vertices)
+            uv_transform_trace.append(
+                {
+                    "source": part.name,
+                    "material": part.material_name,
+                    "scale": list(scale),
+                    "offset": list(offset),
+                    "input_uv_bounds": [
+                        [
+                            min((vertex.uv[axis] for vertex in part.vertices), default=0.0),
+                            max((vertex.uv[axis] for vertex in part.vertices), default=0.0),
+                        ]
+                        for axis in range(2)
+                    ],
+                }
+            )
+            vertices.extend(
+                transformed_source_vertex(vertex, scale, offset) for vertex in part.vertices
+            )
             indices.extend(base + index for index in part.indices)
         return Mesh(
             rule.output_name,
@@ -1608,7 +2006,9 @@ def merged_native_meshes(meshes: list[Mesh], config: PortConfig) -> list[Mesh]:
 
     def is_best_explicit_match(mesh: Mesh, rule: RecordRule) -> bool:
         rank = mesh_match_rank(mesh, rule)
-        return rank > 0 and rank == max(mesh_match_rank(mesh, explicit) for explicit in explicit_rules)
+        return rank > 0 and rank == max(
+            mesh_match_rank(mesh, explicit) for explicit in explicit_rules
+        )
 
     for record_index, rule in enumerate(config.records):
         if output[record_index] is not None:
@@ -1618,15 +2018,22 @@ def merged_native_meshes(meshes: list[Mesh], config: PortConfig) -> list[Mesh]:
                 (index, mesh)
                 for index, mesh in enumerate(meshes)
                 if index not in assigned
-                and (assigned_record(mesh) == rule.output_name or (
-                    not assigned_record(mesh) and not any(mesh_matches_rule(mesh, explicit) for explicit in explicit_rules)
-                ))
+                and (
+                    assigned_record(mesh) == rule.output_name
+                    or (
+                        not assigned_record(mesh)
+                        and not any(
+                            mesh_matches_rule(mesh, explicit) for explicit in explicit_rules
+                        )
+                    )
+                )
             ]
         else:
             selected = [
                 (index, mesh)
                 for index, mesh in enumerate(meshes)
-                if index not in assigned and (
+                if index not in assigned
+                and (
                     assigned_record(mesh) == rule.output_name
                     or (not assigned_record(mesh) and is_best_explicit_match(mesh, rule))
                 )
@@ -1670,10 +2077,16 @@ def merged_native_meshes(meshes: list[Mesh], config: PortConfig) -> list[Mesh]:
                 chunk_rule.force_layout_material = rule.force_layout_material
                 output[chunk_index] = chunk
         elif rule.fallback_degenerate or wildcard_rules:
-            output[record_index] = Mesh(rule.output_name, [zero, zero, zero], [0, 1, 2], material_index, rule.material_name)
+            output[record_index] = Mesh(
+                rule.output_name, [zero, zero, zero], [0, 1, 2], material_index, rule.material_name
+            )
         else:
-            output[record_index] = Mesh(rule.output_name, [zero, zero, zero], [0, 1, 2], material_index, rule.material_name)
-    missing_records = [config.records[index].output_name for index, mesh in enumerate(output) if mesh is None]
+            output[record_index] = Mesh(
+                rule.output_name, [zero, zero, zero], [0, 1, 2], material_index, rule.material_name
+            )
+    missing_records = [
+        config.records[index].output_name for index, mesh in enumerate(output) if mesh is None
+    ]
     if missing_records:
         raise ValueError(f"native records did not receive output meshes: {missing_records}")
     return [mesh for mesh in output if mesh is not None]
@@ -1700,13 +2113,21 @@ def build_g4md(
     md = bytearray(header_size)
     md[0:4] = b"G4MD"
     struct.pack_into("<HHI", md, 0x04, header_size, 0x68, 0x00280000)
-    struct.pack_into("<HHHBBBB", md, 0x20, mesh_count, material_count, 1, 1, len(texture_names), 2, 0x0A)
+    struct.pack_into(
+        "<HHHBBBB", md, 0x20, mesh_count, material_count, 1, 1, len(texture_names), 2, 0x0A
+    )
     struct.pack_into("<I", md, 0x50, records[0]["vertex_buffer_size"])
     struct.pack_into("<I", md, 0x54, records[0]["index_buffer_size"])
     struct.pack_into("<I", md, 0x5C, records[0]["index_base"])
 
-    mins = [min(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices) for axis in range(3)]
-    maxs = [max(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices) for axis in range(3)]
+    mins = [
+        min(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices)
+        for axis in range(3)
+    ]
+    maxs = [
+        max(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices)
+        for axis in range(3)
+    ]
     center = [(mins[axis] + maxs[axis]) * 0.5 for axis in range(3)]
     extent = [(maxs[axis] - mins[axis]) * 0.5 for axis in range(3)]
     struct.pack_into("<3f", md, 0x30, *center)
@@ -1736,7 +2157,12 @@ def build_g4md(
         struct.pack_into("<3f", md, off + 0x20, *local_extent)
         struct.pack_into("<I", md, off + 0x30, record["index_count"] // 3)
         struct.pack_into("<H", md, off + 0x34, 0xFF)
-        struct.pack_into("<H", md, off + 0x38, FACE_NAME_INDEX if mesh.name in FACE_MESH_NAMES else NON_FACE_NAME_INDEX)
+        struct.pack_into(
+            "<H",
+            md,
+            off + 0x38,
+            FACE_NAME_INDEX if mesh.name in FACE_MESH_NAMES else NON_FACE_NAME_INDEX,
+        )
         struct.pack_into("<H", md, off + 0x3A, 0)
         struct.pack_into("<H", md, off + 0x3C, 0x101)
         struct.pack_into("<H", md, off + 0x3E, 0x44)
@@ -1853,12 +2279,16 @@ def apply_material_overrides(md: bytearray, overrides: list[MaterialOverride]) -
         next_ref_start = max(next_ref_start, ref_start + len(override.texture_refs))
 
 
-def build_base_g4md(meshes: list[Mesh], records: list[dict], raw_root: Path, config: PortConfig) -> bytes:
+def build_base_g4md(
+    meshes: list[Mesh], records: list[dict], raw_root: Path, config: PortConfig
+) -> bytes:
     native = (raw_root / config.common_rel).read_bytes()
     native_mesh_count = struct.unpack_from("<H", native, 0x20)[0]
     mesh_count = len(meshes)
     if mesh_count != native_mesh_count:
-        raise ValueError(f"merged mesh count {mesh_count} does not match native count {native_mesh_count}")
+        raise ValueError(
+            f"merged mesh count {mesh_count} does not match native count {native_mesh_count}"
+        )
 
     header_size = 0xA0
     md = bytearray(native)
@@ -1866,8 +2296,14 @@ def build_base_g4md(meshes: list[Mesh], records: list[dict], raw_root: Path, con
     struct.pack_into("<I", md, 0x54, records[0]["index_buffer_size"])
     struct.pack_into("<I", md, 0x5C, records[0]["index_base"])
 
-    mins = [min(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices) for axis in range(3)]
-    maxs = [max(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices) for axis in range(3)]
+    mins = [
+        min(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices)
+        for axis in range(3)
+    ]
+    maxs = [
+        max(vertex.position[axis] for mesh in meshes for vertex in mesh.vertices)
+        for axis in range(3)
+    ]
     center = [(mins[axis] + maxs[axis]) * 0.5 for axis in range(3)]
     extent = [(maxs[axis] - mins[axis]) * 0.5 for axis in range(3)]
     struct.pack_into("<3f", md, 0x30, *center)
@@ -2045,7 +2481,9 @@ def parse_g4tx_payloads(path: Path) -> tuple[bytes, list[dict], dict[str, bytes]
     string_offset_pos = pos
     string_offsets = list(struct.unpack_from("<" + "H" * total_count, data, pos))
     string_base = string_offset_pos
-    texture_base = align(struct.unpack_from("<H", data, 0x04)[0] + struct.unpack_from("<I", data, 0x0C)[0], 0x10)
+    texture_base = align(
+        struct.unpack_from("<H", data, 0x04)[0] + struct.unpack_from("<I", data, 0x0C)[0], 0x10
+    )
     payloads: dict[str, bytes] = {}
     for index, entry in enumerate(entries):
         absolute_name = string_base + string_offsets[index]
@@ -2053,11 +2491,15 @@ def parse_g4tx_payloads(path: Path) -> tuple[bytes, list[dict], dict[str, bytes]
         name = data[absolute_name:end].decode("ascii")
         entry["name"] = name
         entry["id"] = ids[index] if index < len(ids) else index
-        payloads[name] = data[texture_base + entry["offset"] : texture_base + entry["offset"] + entry["size"]]
+        payloads[name] = data[
+            texture_base + entry["offset"] : texture_base + entry["offset"] + entry["size"]
+        ]
     return header, entries, payloads
 
 
-def rebuild_g4tx(template_path: Path, material_plans: list[MaterialPlan], texture_dir: Path, out_path: Path) -> list[str]:
+def rebuild_g4tx(
+    template_path: Path, material_plans: list[MaterialPlan], texture_dir: Path, out_path: Path
+) -> list[str]:
     header, template_entries, native_payloads = parse_g4tx_payloads(template_path)
     entries_by_name = {entry["name"]: entry for entry in template_entries}
     output_entries: list[dict] = []
@@ -2070,12 +2512,16 @@ def rebuild_g4tx(template_path: Path, material_plans: list[MaterialPlan], textur
             texture_names.append(texture_name)
             if texture_name == plan.base_texture:
                 png_path = next(texture_dir.glob(f"{plan.base_texture}.png"), None)
-                payload = png_to_dds(png_path) if png_path else native_payloads[f"c01000010_{group}"]
+                payload = (
+                    png_to_dds(png_path) if png_path else native_payloads[f"c01000010_{group}"]
+                )
                 template = entries_by_name[f"c01000010_{group}"]
             else:
                 suffix = texture_name[len(plan.base_texture) :]
                 native_name = f"c01000010_{group}{suffix}"
-                fallback = f"c01000010_20{suffix}" if suffix in {"sp", "spm"} else f"c01000010_{group}"
+                fallback = (
+                    f"c01000010_20{suffix}" if suffix in {"sp", "spm"} else f"c01000010_{group}"
+                )
                 payload = native_payloads.get(native_name, native_payloads[fallback])
                 template = entries_by_name.get(native_name, entries_by_name[fallback])
             output_entries.append({"name": texture_name, "payload": payload, "template": template})
@@ -2151,7 +2597,11 @@ def rebuild_native_g4tx_with_custom_textures(
     # its hashes, IDs, strings and table size intact; only records and payloads
     # are replaced.  Rebuilding those tables shifted the texture base by 16 B.
     entry_offset = 0x60
-    data_offset = align(struct.unpack_from("<H", template_data, 0x04)[0] + struct.unpack_from("<I", template_data, 0x0C)[0], 0x10)
+    data_offset = align(
+        struct.unpack_from("<H", template_data, 0x04)[0]
+        + struct.unpack_from("<I", template_data, 0x0C)[0],
+        0x10,
+    )
     out = bytearray(template_data[:data_offset])
     data_cursor = data_offset
     for index, entry in enumerate(output_entries):
@@ -2196,7 +2646,9 @@ def prepare_port_geometry(
     native_g4md = (raw_root / config.common_rel).read_bytes()
     native_palettes = native_record_palettes(native_g4md)
     native_joint_indices = native_joint_name_indices(native_g4md)
-    palettes = configured_record_palettes(native_palettes, config.records, meshes, config.joint_aliases or {}, native_joint_indices)
+    palettes = configured_record_palettes(
+        native_palettes, config.records, meshes, config.joint_aliases or {}, native_joint_indices
+    )
     resolved_records = []
     for mesh, palette, rule in zip(meshes, palettes, config.records):
         resolved = [
@@ -2210,17 +2662,21 @@ def prepare_port_geometry(
             )
             for vertex in mesh.vertices
         ]
-        resolved_records.append({
-            "record": mesh.name,
-            "source_names": list(mesh.source_names),
-            "uv_transform_trace": list(mesh.uv_transform_trace),
-            "vertices": len(mesh.vertices),
-            "indices": len(mesh.indices),
-            "weighted_vertices": sum(bool(vertex.influences) for vertex in mesh.vertices),
-            "max_influences": max((len(vertex.influences) for vertex in mesh.vertices), default=0),
-            "unresolved_influences": sum(item[1] for item in resolved),
-            "palette": palette,
-        })
+        resolved_records.append(
+            {
+                "record": mesh.name,
+                "source_names": list(mesh.source_names),
+                "uv_transform_trace": list(mesh.uv_transform_trace),
+                "vertices": len(mesh.vertices),
+                "indices": len(mesh.indices),
+                "weighted_vertices": sum(bool(vertex.influences) for vertex in mesh.vertices),
+                "max_influences": max(
+                    (len(vertex.influences) for vertex in mesh.vertices), default=0
+                ),
+                "unresolved_influences": sum(item[1] for item in resolved),
+                "palette": palette,
+            }
+        )
     return source_meshes, meshes, native_palettes, palettes, resolved_records
 
 
@@ -2240,19 +2696,33 @@ def analyze_port(
     recommendations = []
     unresolved = sum(record["unresolved_influences"] for record in records)
     if unresolved:
-        recommendations.append("Add joint_aliases or expand the affected record palettes before exporting.")
+        recommendations.append(
+            "Add joint_aliases or expand the affected record palettes before exporting."
+        )
     if skeleton["status"] == "expected_missing":
-        recommendations.append(f"Provide --g4sk {skeleton['expected_path']} to validate the palette against the assigned skeleton.")
+        recommendations.append(
+            f"Provide --g4sk {skeleton['expected_path']} to validate the palette against the assigned skeleton."
+        )
     elif skeleton["status"] == "missing_joints":
         recommendations.append("Remove or remap palette joints missing from the assigned G4SK.")
     elif skeleton["status"] == "invalid_bind_matrices":
-        recommendations.append("Use a different G4SK: its bind and inverse-bind matrices are not mutually consistent.")
+        recommendations.append(
+            "Use a different G4SK: its bind and inverse-bind matrices are not mutually consistent."
+        )
     if any(len(mesh.vertices) > 60000 for mesh in meshes):
-        recommendations.append("A record is close to the 65535 vertex limit; reserve another native slot or simplify the mesh.")
-    if source_dae and not any(vertex.influences for mesh in source_meshes for vertex in mesh.vertices):
-        recommendations.append("The DAE contains no skin weights; use --weights-json or a Collada export with controllers.")
+        recommendations.append(
+            "A record is close to the 65535 vertex limit; reserve another native slot or simplify the mesh."
+        )
+    if source_dae and not any(
+        vertex.influences for mesh in source_meshes for vertex in mesh.vertices
+    ):
+        recommendations.append(
+            "The DAE contains no skin weights; use --weights-json or a Collada export with controllers."
+        )
     if not config.generate_tangents:
-        recommendations.append("Enable generate_tangents for materials that use normal/specular direction maps.")
+        recommendations.append(
+            "Enable generate_tangents for materials that use normal/specular direction maps."
+        )
     return {
         "mode": "analyze",
         "model_rel": config.model_rel.as_posix(),
@@ -2265,7 +2735,10 @@ def analyze_port(
                 "indices": len(mesh.indices),
                 "weighted_vertices": sum(bool(vertex.influences) for vertex in mesh.vertices),
                 "uv_bounds": [
-                    [min((vertex.uv[axis] for vertex in mesh.vertices), default=0.0), max((vertex.uv[axis] for vertex in mesh.vertices), default=0.0)]
+                    [
+                        min((vertex.uv[axis] for vertex in mesh.vertices), default=0.0),
+                        max((vertex.uv[axis] for vertex in mesh.vertices), default=0.0),
+                    ]
                     for axis in range(2)
                 ],
             }
@@ -2296,7 +2769,9 @@ def write_port(
         source_dae, raw_root, config, weight_sidecar
     )
     native_model = raw_root / config.common_rel
-    native_joint_indices = native_joint_name_indices(native_model.read_bytes()) if native_model.is_file() else {}
+    native_joint_indices = (
+        native_joint_name_indices(native_model.read_bytes()) if native_model.is_file() else {}
+    )
     g4mg, records = build_g4mg(
         meshes,
         config.uv_flip,
@@ -2315,7 +2790,10 @@ def write_port(
         )
     expected_skeleton = resolve_expected_skeleton(config.model_rel, raw_root, chara_model)
     skeleton_validation = validate_skeleton_palettes(palettes, skeleton_path, expected_skeleton)
-    if config.strict_skinning and skeleton_validation["status"] in {"missing_joints", "invalid_bind_matrices"}:
+    if config.strict_skinning and skeleton_validation["status"] in {
+        "missing_joints",
+        "invalid_bind_matrices",
+    }:
         raise ValueError(f"assigned G4SK validation failed: {skeleton_validation}")
 
     common_out = out_root / config.common_rel
@@ -2359,7 +2837,9 @@ def write_port(
         "indices": sum(len(mesh.indices) for mesh in meshes),
         "source_meshes": len(source_meshes),
         "weighted_vertices": sum(record["weighted_vertices"] for record in records),
-        "tangent_vertices": sum(vertex.tangent is not None for mesh in meshes for vertex in mesh.vertices),
+        "tangent_vertices": sum(
+            vertex.tangent is not None for mesh in meshes for vertex in mesh.vertices
+        ),
         "unresolved_influences": unresolved_influences,
         "palettes": [record["palette"] for record in records],
         "native_palettes": native_palettes,
@@ -2376,14 +2856,27 @@ def write_port(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Experimental DAE to Level-5 G4MD/G4MG/G4TX port writer.")
+    parser = argparse.ArgumentParser(
+        description="Experimental DAE to Level-5 G4MD/G4MG/G4TX port writer."
+    )
     parser.add_argument("dae", nargs="?", type=Path, help="Optional source Collada DAE.")
     parser.add_argument("--raw-root", type=Path, default=DEFAULT_RAW_ROOT)
     parser.add_argument("--out-root", type=Path, default=Path("data"))
     parser.add_argument("--config", type=Path, help="Optional port preset JSON.")
-    parser.add_argument("--analyze", action="store_true", help="Analyze source, records, palettes and skeleton without writing model files.")
-    parser.add_argument("--g4sk", type=Path, help="Assigned G4SK used to validate compact palette joints by name.")
-    parser.add_argument("--chara-model", type=Path, default=DEFAULT_CHARA_MODEL, help="chara_model XML used to resolve the expected body skeleton.")
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="Analyze source, records, palettes and skeleton without writing model files.",
+    )
+    parser.add_argument(
+        "--g4sk", type=Path, help="Assigned G4SK used to validate compact palette joints by name."
+    )
+    parser.add_argument(
+        "--chara-model",
+        type=Path,
+        default=DEFAULT_CHARA_MODEL,
+        help="chara_model XML used to resolve the expected body skeleton.",
+    )
     parser.add_argument(
         "--weights-json",
         type=Path,

@@ -34,7 +34,10 @@ class DataRootInferenceTests(unittest.TestCase):
         old_env = os.environ.get("LEVEL5_G4_RAW_ROOT")
         try:
             configured = Path("/tmp/SteamLibrary/steamapps/common")
-            model = configured / "INAZUMA ELEVEN Victory Road/data.7.1.1/common/chr/_face/01_IE1/c01001900/c01001900.g4md"
+            model = (
+                configured
+                / "INAZUMA ELEVEN Victory Road/data.7.1.1/common/chr/_face/01_IE1/c01001900/c01001900.g4md"
+            )
             os.environ["LEVEL5_G4_RAW_ROOT"] = str(configured)
             probe.RAW_DATA_ROOT = configured
             probe.configure_raw_data_root_from_path(model)

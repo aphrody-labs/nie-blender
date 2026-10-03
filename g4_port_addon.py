@@ -32,9 +32,17 @@ except ImportError:
     from g4_roundtrip import NATIVE_ROUNDTRIP_SIGNATURE_VERSION, native_mesh_signature
 
 try:
-    from .g4_joint_aliases import load_joint_alias_catalog, normalize_joint_key, resolve_catalog_alias
+    from .g4_joint_aliases import (
+        load_joint_alias_catalog,
+        normalize_joint_key,
+        resolve_catalog_alias,
+    )
 except ImportError:
-    from g4_joint_aliases import load_joint_alias_catalog, normalize_joint_key, resolve_catalog_alias
+    from g4_joint_aliases import (
+        load_joint_alias_catalog,
+        normalize_joint_key,
+        resolve_catalog_alias,
+    )
 
 
 ADDON_ID = __name__.split(".", 1)[0] if "." in __name__ else __name__
@@ -210,7 +218,9 @@ def used_material_summary(obj: bpy.types.Object) -> str:
     for index in indices:
         material = obj.data.materials[index] if 0 <= index < len(obj.data.materials) else None
         image = material_image_path(material)
-        parts.append(f"{index}:{material.name if material else '<none>'}={Path(image).name if image else '<none>'}")
+        parts.append(
+            f"{index}:{material.name if material else '<none>'}={Path(image).name if image else '<none>'}"
+        )
     return "; ".join(parts) or "<none>"
 
 
@@ -255,19 +265,32 @@ def remove_pose_export_collection(collection) -> None:
 
 
 ARM_BIND_TARGETS = {
-    "l_collar": "l_s_1_0", "l_arm": "l_a_1_0", "l_elbow": "l_a_1_1", "l_hand": "l_w_1_0",
-    "r_collar": "r_s_1_0", "r_arm": "r_a_1_0", "r_elbow": "r_a_1_1", "r_hand": "r_w_1_0",
+    "l_collar": "l_s_1_0",
+    "l_arm": "l_a_1_0",
+    "l_elbow": "l_a_1_1",
+    "l_hand": "l_w_1_0",
+    "r_collar": "r_s_1_0",
+    "r_arm": "r_a_1_0",
+    "r_elbow": "r_a_1_1",
+    "r_hand": "r_w_1_0",
 }
 
 ARM_ROLL_ALIASES = {
-    "l_hand": "l_w_1_0", "r_hand": "r_w_1_0",
-    "l_hand_roll": "l_a_1_1", "l_hand_roll_02": "l_a_1_1", "l_elbow_sharp": "l_a_1_1",
-    "r_hand_roll": "r_a_1_1", "r_hand_roll_02": "r_a_1_1", "r_elbow_sharp": "r_a_1_1",
+    "l_hand": "l_w_1_0",
+    "r_hand": "r_w_1_0",
+    "l_hand_roll": "l_a_1_1",
+    "l_hand_roll_02": "l_a_1_1",
+    "l_elbow_sharp": "l_a_1_1",
+    "r_hand_roll": "r_a_1_1",
+    "r_hand_roll_02": "r_a_1_1",
+    "r_elbow_sharp": "r_a_1_1",
 }
 
 
 def armature_for_mesh(source):
-    modifier = next((item for item in source.modifiers if item.type == "ARMATURE" and item.object), None)
+    modifier = next(
+        (item for item in source.modifiers if item.type == "ARMATURE" and item.object), None
+    )
     return modifier.object if modifier is not None and modifier.object.type == "ARMATURE" else None
 
 
@@ -289,7 +312,9 @@ def arm_bind_translation_offsets(props) -> dict[str, list[float]]:
         if armature is not None:
             armature_counts[armature] = armature_counts.get(armature, 0) + 1
     if not armature_counts:
-        raise RuntimeError("Arm bind correction requires an exported mesh with an armature modifier.")
+        raise RuntimeError(
+            "Arm bind correction requires an exported mesh with an armature modifier."
+        )
     source = max(armature_counts, key=armature_counts.get)
     offsets = {}
     for source_name, target_name in ARM_BIND_TARGETS.items():
@@ -321,7 +346,9 @@ def arm_bind_segment_transforms(props) -> dict[str, list[float]]:
         if armature is not None:
             armature_counts[armature] = armature_counts.get(armature, 0) + 1
     if not armature_counts:
-        raise RuntimeError("Arm bind correction requires an exported mesh with an armature modifier.")
+        raise RuntimeError(
+            "Arm bind correction requires an exported mesh with an armature modifier."
+        )
     source = max(armature_counts, key=armature_counts.get)
     chains = (
         ("l_collar", "l_arm", "l_elbow", "l_hand"),
@@ -343,16 +370,36 @@ def arm_bind_segment_transforms(props) -> dict[str, list[float]]:
             target_head = target_bone.matrix_local.translation
             if index + 1 < len(chain):
                 next_source_name = chain[index + 1]
-                source_vector = game_position(source.pose.bones[next_source_name].matrix.translation) - source_head
-                target_vector = target.data.bones[ARM_BIND_TARGETS[next_source_name]].matrix_local.translation - target_head
+                source_vector = (
+                    game_position(source.pose.bones[next_source_name].matrix.translation)
+                    - source_head
+                )
+                target_vector = (
+                    target.data.bones[ARM_BIND_TARGETS[next_source_name]].matrix_local.translation
+                    - target_head
+                )
             else:
                 previous_source_name = chain[index - 1]
-                source_vector = source_head - game_position(source.pose.bones[previous_source_name].matrix.translation)
-                target_vector = target_head - target.data.bones[ARM_BIND_TARGETS[previous_source_name]].matrix_local.translation
+                source_vector = source_head - game_position(
+                    source.pose.bones[previous_source_name].matrix.translation
+                )
+                target_vector = (
+                    target_head
+                    - target.data.bones[
+                        ARM_BIND_TARGETS[previous_source_name]
+                    ].matrix_local.translation
+                )
             if source_vector.length < 1e-6 or target_vector.length < 1e-6:
                 continue
-            rotation = source_vector.normalized().rotation_difference(target_vector.normalized()).to_matrix().to_4x4()
-            correction = Matrix.Translation(target_head) @ rotation @ Matrix.Translation(-source_head)
+            rotation = (
+                source_vector.normalized()
+                .rotation_difference(target_vector.normalized())
+                .to_matrix()
+                .to_4x4()
+            )
+            correction = (
+                Matrix.Translation(target_head) @ rotation @ Matrix.Translation(-source_head)
+            )
             transforms[target_name] = [value for row in correction for value in row]
     if not transforms:
         raise RuntimeError("The selected source and target rigs do not contain a usable arm chain.")
@@ -407,7 +454,9 @@ def export_collada(
                     if modifier.type != "ARMATURE":
                         modifier.show_viewport = False
             bpy.context.view_layer.update()
-            mesh = bpy.data.meshes.new_from_object(pose_source.evaluated_get(depsgraph), depsgraph=depsgraph)
+            mesh = bpy.data.meshes.new_from_object(
+                pose_source.evaluated_get(depsgraph), depsgraph=depsgraph
+            )
             copy = bpy.data.objects.new(source.name, mesh)
             copy.matrix_world = source.matrix_world
             collection.objects.link(copy)
@@ -441,7 +490,11 @@ def load_json(path: Path) -> dict:
 
 
 TEXTURE_MODE_ITEMS = [
-    ("custom", "Rebuild Custom G4TX", "Copy the original G4TX and replace selected texture entries"),
+    (
+        "custom",
+        "Rebuild Custom G4TX",
+        "Copy the original G4TX and replace selected texture entries",
+    ),
     ("native", "Use Native G4TX", "Copy the original G4TX files from the raw data root"),
     ("keep", "Keep Existing G4TX", "Preserve the G4TX already present in the output folder"),
 ]
@@ -528,7 +581,9 @@ def common_g4tx_for_model(data_root: Path, model_rel: str) -> Path:
 def texture_key_for_record(record_name: str, texture_names: list[str]) -> str:
     if record_name in texture_names:
         return record_name
-    prefix_matches = [name for name in texture_names if name == record_name or name.startswith(f"{record_name}_")]
+    prefix_matches = [
+        name for name in texture_names if name == record_name or name.startswith(f"{record_name}_")
+    ]
     if prefix_matches:
         return prefix_matches[0]
     stem = record_name.rsplit("_", 1)[0]
@@ -538,14 +593,25 @@ def texture_key_for_record(record_name: str, texture_names: list[str]) -> str:
 
 def shared_face_texture_key(texture_names: list[str]) -> str:
     """Return the native base map shared by the eye and mouth expression meshes."""
-    return next((name for name in texture_names if re.search(r"_10$", name) and not is_special_texture(name)), "")
+    return next(
+        (
+            name
+            for name in texture_names
+            if re.search(r"_10$", name) and not is_special_texture(name)
+        ),
+        "",
+    )
 
 
 def face_texture_is_shared(records, texture_names: list[str]) -> bool:
     texture_name = shared_face_texture_key(texture_names)
-    return bool(texture_name and any(
-        is_face_atlas_record(record) and record.texture_key == texture_name for record in records
-    ))
+    return bool(
+        texture_name
+        and any(
+            is_face_atlas_record(record) and record.texture_key == texture_name
+            for record in records
+        )
+    )
 
 
 def is_face_atlas_record(record) -> bool:
@@ -717,7 +783,10 @@ class G4PortTextureReplacement(PropertyGroup):
     atlas_summary: StringProperty(default="", options={"HIDDEN"})
     expression_atlas: BoolProperty(default=False, options={"HIDDEN"})
     expression_atlas_mode: EnumProperty(
-        items=[("pool", "Pool", "Built from the eight expression-pool cells"), ("existing", "Existing", "Use an already prepared 4x2 facial atlas")],
+        items=[
+            ("pool", "Pool", "Built from the eight expression-pool cells"),
+            ("existing", "Existing", "Use an already prepared 4x2 facial atlas"),
+        ],
         default="pool",
         options={"HIDDEN"},
     )
@@ -730,9 +799,13 @@ class G4PortExpressionImage(PropertyGroup):
 class G4PortRecord(PropertyGroup):
     output_name: StringProperty(name="Output", default="c01000010_20")
     material_name: StringProperty(name="Material", default="c01000010_20M")
-    match_names: StringProperty(name="Objects", default="*", description="Comma-separated object or material names")
+    match_names: StringProperty(
+        name="Objects", default="*", description="Comma-separated object or material names"
+    )
     original_index: IntProperty(name="Original Mesh", default=-1, min=-1)
-    texture_key: StringProperty(name="Texture Key", default="", description="Native texture name to replace in custom mode")
+    texture_key: StringProperty(
+        name="Texture Key", default="", description="Native texture name to replace in custom mode"
+    )
     texture_file: StringProperty(name="Texture File", subtype="FILE_PATH", default="")
     uv_flip_x: BoolProperty(name="Flip U", default=False)
     uv_flip_y: BoolProperty(name="Flip V", default=False)
@@ -918,7 +991,11 @@ class G4PortSceneSettings(PropertyGroup):
         result = {}
         atlas_states = {row["name"]: row["state"] for row in atlas_status_rows(self)}
         texture_names = [entry.texture_name for entry in self.texture_entries]
-        face_texture = shared_face_texture_key(texture_names) if face_texture_is_shared(self.records, texture_names) else ""
+        face_texture = (
+            shared_face_texture_key(texture_names)
+            if face_texture_is_shared(self.records, texture_names)
+            else ""
+        )
         for item in self.texture_entries:
             if not item.texture_name or not item.replacement_path:
                 continue
@@ -939,7 +1016,11 @@ class G4PortSceneSettings(PropertyGroup):
                 if key == face_texture:
                     continue
                 entry = texture_entry(self, key)
-                if entry is not None and entry.atlas_signature and atlas_states.get(key) == "warning":
+                if (
+                    entry is not None
+                    and entry.atlas_signature
+                    and atlas_states.get(key) == "warning"
+                ):
                     continue
                 if self.replace_special_textures or not is_special_texture(key):
                     result[key] = value.strip()
@@ -1118,11 +1199,15 @@ def original_g4tx_path(data_root: Path, model_rel: str) -> Path | None:
     return None
 
 
-def apply_original_model_to_settings(target: G4PortSceneSettings, path: Path, summary: dict) -> None:
+def apply_original_model_to_settings(
+    target: G4PortSceneSettings, path: Path, summary: dict
+) -> None:
     md = summary.get("g4md") or {}
     data_root = infer_data_root(path)
     if data_root is None:
-        raise RuntimeError("The original model must be inside a data/common or data/dx11 filesystem tree.")
+        raise RuntimeError(
+            "The original model must be inside a data/common or data/dx11 filesystem tree."
+        )
     model_rel = model_rel_from_path(path)
     g4tx_path = original_g4tx_path(data_root, model_rel)
     texture_names = parse_g4tx_names(g4tx_path) if g4tx_path is not None else []
@@ -1156,7 +1241,9 @@ def apply_original_model_to_settings(target: G4PortSceneSettings, path: Path, su
         layout_index = int(source.get("layout_index", 0))
         record.original_index = index
         record.output_name = mesh_names[index] if index < len(mesh_names) else f"mesh_{index}"
-        record.material_name = material_names[material_index] if material_index < len(material_names) else ""
+        record.material_name = (
+            material_names[material_index] if material_index < len(material_names) else ""
+        )
         record.match_names = record.output_name
         record.texture_key = texture_key_for_record(record.output_name, texture_names)
         record.fallback_degenerate = True
@@ -1198,7 +1285,9 @@ def guess_object_assignments(props: G4PortSceneSettings) -> int:
     assigned = 0
     for obj in mesh_objects(False):
         object_key = blender_base_name(obj.name).lower()
-        material_key = blender_base_name(obj.active_material.name).lower() if obj.active_material else ""
+        material_key = (
+            blender_base_name(obj.active_material.name).lower() if obj.active_material else ""
+        )
         best = None
         for record in records:
             candidates = [
@@ -1230,14 +1319,17 @@ def sync_assignment_table(context) -> None:
             assignments[target].append(obj.name)
     for record in props.records:
         names = assignments.get(record.output_name) or split_csv(record.match_names)
-        record.match_names = join_csv(list(dict.fromkeys(name for name in names if name and name != "*")))
+        record.match_names = join_csv(
+            list(dict.fromkeys(name for name in names if name and name != "*"))
+        )
     props.use_preset_file = False
 
 
 def objects_for_record(record: G4PortRecord) -> list[bpy.types.Object]:
     explicit = set(split_csv(record.match_names))
     assigned = [
-        obj for obj in mesh_objects(False)
+        obj
+        for obj in mesh_objects(False)
         if getattr(obj.level5_g4_port, "target_record", "__none__") == record.output_name
     ]
     if assigned:
@@ -1379,7 +1471,9 @@ def image_pixels(width: int, height: int, color: tuple[float, float, float, floa
     return array("f", color) * (width * height)
 
 
-def set_pixel(pixels: array, width: int, height: int, x: int, y: int, color: tuple[float, float, float, float]) -> None:
+def set_pixel(
+    pixels: array, width: int, height: int, x: int, y: int, color: tuple[float, float, float, float]
+) -> None:
     if 0 <= x < width and 0 <= y < height:
         offset = (y * width + x) * 4
         pixels[offset] = color[0]
@@ -1536,7 +1630,9 @@ def blit_image_fit(
             dst = (dst_y * target_width + dst_x) * 4
             target[dst : dst + 4] = source_pixels[src : src + 4]
     if gutter:
-        extend_rect_border(target, target_width, target_height, draw_x, draw_y, draw_width, draw_height, gutter)
+        extend_rect_border(
+            target, target_width, target_height, draw_x, draw_y, draw_width, draw_height, gutter
+        )
     return draw_x, draw_y, draw_width, draw_height
 
 
@@ -1562,7 +1658,9 @@ def extend_rect_border(
             pixels[target : target + 4] = pixels[source : source + 4]
 
 
-def bleed_transparent_pixels(source: tuple[int, int, array], radius: int = 2) -> tuple[int, int, array]:
+def bleed_transparent_pixels(
+    source: tuple[int, int, array], radius: int = 2
+) -> tuple[int, int, array]:
     """Give transparent texels nearby colour, avoiding black fringes after filtering."""
     width, height, source_pixels = source
     pixels = array("f", source_pixels)
@@ -1588,7 +1686,9 @@ def bleed_transparent_pixels(source: tuple[int, int, array], radius: int = 2) ->
                     neighbours.append(target - width * 4)
                 if y + 1 < height:
                     neighbours.append(target + width * 4)
-                source_offset = next((offset for offset in neighbours if has_color[offset // 4]), None)
+                source_offset = next(
+                    (offset for offset in neighbours if has_color[offset // 4]), None
+                )
                 if source_offset is not None:
                     pixels[target : target + 3] = pixels[source_offset : source_offset + 3]
                     has_color[target_index] = True
@@ -1607,7 +1707,12 @@ def atlas_grid(count: int) -> tuple[int, int]:
 
 
 def capped_atlas_dimensions(
-    entry_width: int, entry_height: int, source_width: int, source_height: int, columns: int, rows: int
+    entry_width: int,
+    entry_height: int,
+    source_width: int,
+    source_height: int,
+    columns: int,
+    rows: int,
 ) -> tuple[int, int, int, int]:
     cell_width = max(1, max(entry_width, source_width * columns) // columns)
     cell_height = max(1, max(entry_height, source_height * rows) // rows)
@@ -1635,7 +1740,9 @@ def object_uv_bounds(obj: bpy.types.Object) -> tuple[float, float, float, float]
 
 def uv_requires_projection(obj: bpy.types.Object) -> bool:
     bounds = object_uv_bounds(obj)
-    return bool(bounds and (bounds[0] < 0.0 or bounds[1] > 1.0 or bounds[2] < 0.0 or bounds[3] > 1.0))
+    return bool(
+        bounds and (bounds[0] < 0.0 or bounds[1] > 1.0 or bounds[2] < 0.0 or bounds[3] > 1.0)
+    )
 
 
 def object_image_extension(obj: bpy.types.Object) -> str:
@@ -1678,7 +1785,9 @@ def projected_source_image(
     return width, height, out
 
 
-def set_object_uv_fit(obj: bpy.types.Object, origin_u: float, origin_v: float, width: float, height: float) -> None:
+def set_object_uv_fit(
+    obj: bpy.types.Object, origin_u: float, origin_v: float, width: float, height: float
+) -> None:
     bounds = object_uv_bounds(obj)
     uv = obj.level5_g4_port
     if bounds is None:
@@ -1699,7 +1808,9 @@ def set_object_uv_fit(obj: bpy.types.Object, origin_u: float, origin_v: float, w
     uv.uv_offset_v = origin_v + (height - used_v) * 0.5 - min_v * scale
 
 
-def set_object_uv_tile(obj: bpy.types.Object, origin_u: float, origin_v: float, width: float, height: float) -> None:
+def set_object_uv_tile(
+    obj: bpy.types.Object, origin_u: float, origin_v: float, width: float, height: float
+) -> None:
     uv = obj.level5_g4_port
     uv.uv_scale_u = width
     uv.uv_scale_v = height
@@ -1710,7 +1821,9 @@ def set_object_uv_tile(obj: bpy.types.Object, origin_u: float, origin_v: float, 
 def object_uv_transform_summary(obj: bpy.types.Object) -> str:
     uv = obj.level5_g4_port
     bounds = object_uv_bounds(obj)
-    bounds_text = "none" if bounds is None else "(" + ", ".join(f"{value:.6f}" for value in bounds) + ")"
+    bounds_text = (
+        "none" if bounds is None else "(" + ", ".join(f"{value:.6f}" for value in bounds) + ")"
+    )
     return (
         f"bounds={bounds_text} scale=({uv.uv_scale_u:.6f},{uv.uv_scale_v:.6f}) "
         f"offset=({uv.uv_offset_u:.6f},{uv.uv_offset_v:.6f})"
@@ -1719,7 +1832,12 @@ def object_uv_transform_summary(obj: bpy.types.Object) -> str:
 
 def assign_texture_uv_tiles(records_by_texture: dict[str, list[G4PortRecord]]) -> None:
     for records in records_by_texture.values():
-        items = [(record, obj) for record in records if not is_face_atlas_record(record) for obj in objects_for_record(record)]
+        items = [
+            (record, obj)
+            for record in records
+            if not is_face_atlas_record(record)
+            for obj in objects_for_record(record)
+        ]
         if not items:
             continue
         columns, rows = atlas_grid(len(items))
@@ -1764,7 +1882,9 @@ def source_path_for_object(obj: bpy.types.Object) -> str:
 
 
 def texture_entry(props: G4PortSceneSettings, texture_name: str) -> G4PortTextureReplacement | None:
-    return next((entry for entry in props.texture_entries if entry.texture_name == texture_name), None)
+    return next(
+        (entry for entry in props.texture_entries if entry.texture_name == texture_name), None
+    )
 
 
 def atlas_signature(texture_name: str, records: list[G4PortRecord]) -> str:
@@ -1773,31 +1893,43 @@ def atlas_signature(texture_name: str, records: list[G4PortRecord]) -> str:
         bounds = object_uv_bounds(obj)
         source = source_path_for_object(obj)
         source_path = Path(source) if source else Path()
-        items.append({
-            "record": record.output_name,
-            "object": obj.name,
-            "source": str(source_path),
-            "source_mtime": source_path.stat().st_mtime_ns if source_path.is_file() else 0,
-            "uv_bounds": [round(value, 6) for value in bounds] if bounds else [],
-        })
-    payload = json.dumps({"texture": texture_name, "items": items}, sort_keys=True, separators=(",", ":"))
+        items.append(
+            {
+                "record": record.output_name,
+                "object": obj.name,
+                "source": str(source_path),
+                "source_mtime": source_path.stat().st_mtime_ns if source_path.is_file() else 0,
+                "uv_bounds": [round(value, 6) for value in bounds] if bounds else [],
+            }
+        )
+    payload = json.dumps(
+        {"texture": texture_name, "items": items}, sort_keys=True, separators=(",", ":")
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def expression_pool_paths(props: G4PortSceneSettings) -> list[Path]:
     # Keep all eight slots, including an empty one.  Filtering empty slots
     # would shift every later image into an earlier expression cell.
-    return [Path(bpy.path.abspath(item.image_path)) if item.image_path else Path() for item in props.expression_pool]
+    return [
+        Path(bpy.path.abspath(item.image_path)) if item.image_path else Path()
+        for item in props.expression_pool
+    ]
 
 
 def expression_pool_signature(props: G4PortSceneSettings, texture_name: str) -> str:
     items = []
     for path in expression_pool_paths(props):
-        items.append({
-            "path": str(path),
-            "mtime": path.stat().st_mtime_ns if path.is_file() else 0,
-        })
-    payload = json.dumps({"texture": texture_name, "layout": [FACE_ATLAS_COLUMNS, FACE_ATLAS_ROWS], "items": items}, sort_keys=True)
+        items.append(
+            {
+                "path": str(path),
+                "mtime": path.stat().st_mtime_ns if path.is_file() else 0,
+            }
+        )
+    payload = json.dumps(
+        {"texture": texture_name, "layout": [FACE_ATLAS_COLUMNS, FACE_ATLAS_ROWS], "items": items},
+        sort_keys=True,
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
@@ -1806,20 +1938,25 @@ def face_atlas_entry_ready(props: G4PortSceneSettings, entry: G4PortTextureRepla
         return False
     if not Path(bpy.path.abspath(entry.replacement_path)).is_file():
         return False
-    return entry.expression_atlas_mode == "existing" or entry.atlas_signature == expression_pool_signature(props, entry.texture_name)
+    return (
+        entry.expression_atlas_mode == "existing"
+        or entry.atlas_signature == expression_pool_signature(props, entry.texture_name)
+    )
 
 
 def is_shared_face_atlas(texture_name: str, records) -> bool:
-    return any(is_face_atlas_record(record) for record in records) and texture_name == shared_face_texture_key(
-        [texture_name]
-    )
+    return any(
+        is_face_atlas_record(record) for record in records
+    ) and texture_name == shared_face_texture_key([texture_name])
 
 
 def atlas_status_rows(props: G4PortSceneSettings) -> list[dict]:
     rows = []
     grouped = records_grouped_by_texture(props)
     names = list(grouped)
-    names.extend(entry.texture_name for entry in props.texture_entries if entry.texture_name not in grouped)
+    names.extend(
+        entry.texture_name for entry in props.texture_entries if entry.texture_name not in grouped
+    )
     for texture_name in names:
         if is_special_texture(texture_name):
             continue
@@ -1829,26 +1966,43 @@ def atlas_status_rows(props: G4PortSceneSettings) -> list[dict]:
         signature = atlas_signature(texture_name, records)
         objects = [obj for _, obj in texture_items_for_records(records)]
         missing = [obj.name for obj in objects if not source_path_for_object(obj)]
-        unreadable = [
-            obj.name for obj in objects
-            if source_path_for_object(obj) and load_image_pixels(source_path_for_object(obj)) is None
-        ] if not shared_face else []
+        unreadable = (
+            [
+                obj.name
+                for obj in objects
+                if source_path_for_object(obj)
+                and load_image_pixels(source_path_for_object(obj)) is None
+            ]
+            if not shared_face
+            else []
+        )
         repeated = [
-            obj.name for obj in objects
-            if (bounds := object_uv_bounds(obj)) and (bounds[0] < 0.0 or bounds[1] > 1.0 or bounds[2] < 0.0 or bounds[3] > 1.0)
+            obj.name
+            for obj in objects
+            if (bounds := object_uv_bounds(obj))
+            and (bounds[0] < 0.0 or bounds[1] > 1.0 or bounds[2] < 0.0 or bounds[3] > 1.0)
         ]
-        prepared = entry and entry.replacement_path and Path(bpy.path.abspath(entry.replacement_path)).is_file()
+        prepared = (
+            entry
+            and entry.replacement_path
+            and Path(bpy.path.abspath(entry.replacement_path)).is_file()
+        )
         fresh = prepared and entry.atlas_signature == signature
         if entry is not None and entry.expression_atlas:
             pool_paths = expression_pool_paths(props)
             signature = expression_pool_signature(props, texture_name)
-            prepared = entry.replacement_path and Path(bpy.path.abspath(entry.replacement_path)).is_file()
+            prepared = (
+                entry.replacement_path and Path(bpy.path.abspath(entry.replacement_path)).is_file()
+            )
             if entry.expression_atlas_mode == "existing":
                 state, message = (
                     ("ready", entry.atlas_summary or "Existing 4x2 expression atlas")
-                    if prepared else ("warning", "Existing 4x2 expression atlas is missing")
+                    if prepared
+                    else ("warning", "Existing 4x2 expression atlas is missing")
                 )
-            elif len(pool_paths) != FACE_ATLAS_SLOTS or not all(path.is_file() for path in pool_paths):
+            elif len(pool_paths) != FACE_ATLAS_SLOTS or not all(
+                path.is_file() for path in pool_paths
+            ):
                 state, message = "warning", "Expression pool needs 8 valid images (4x2)"
             elif prepared and entry.atlas_signature == signature:
                 state, message = "ready", entry.atlas_summary or "Prepared 4x2 expression atlas"
@@ -1859,7 +2013,10 @@ def atlas_status_rows(props: G4PortSceneSettings) -> list[dict]:
         elif missing:
             state, message = "warning", f"Missing source: {', '.join(missing)}"
         elif unreadable:
-            state, message = "warning", f"Unreadable source: {', '.join(unreadable)}; native G4TX entry will be preserved"
+            state, message = (
+                "warning",
+                f"Unreadable source: {', '.join(unreadable)}; native G4TX entry will be preserved",
+            )
         elif not objects:
             state, message = "native", "No assigned meshes; native G4TX entry will be preserved"
         elif fresh:
@@ -1870,7 +2027,17 @@ def atlas_status_rows(props: G4PortSceneSettings) -> list[dict]:
             state, message = "stale", "Atlas needs regeneration"
         else:
             state, message = "native", "Native G4TX entry will be preserved"
-        rows.append({"name": texture_name, "records": records, "signature": signature, "state": state, "message": message, "repeated": repeated, "shared_face": shared_face})
+        rows.append(
+            {
+                "name": texture_name,
+                "records": records,
+                "signature": signature,
+                "state": state,
+                "message": message,
+                "repeated": repeated,
+                "shared_face": shared_face,
+            }
+        )
     return rows
 
 
@@ -1920,10 +2087,15 @@ def object_special_texture_path(
     return ""
 
 
-def texture_items_for_records(records: list[G4PortRecord]) -> list[tuple[G4PortRecord, bpy.types.Object]]:
+def texture_items_for_records(
+    records: list[G4PortRecord],
+) -> list[tuple[G4PortRecord, bpy.types.Object]]:
     items = []
     for record in records:
-        items.extend((record, obj) for obj in sorted(objects_for_record(record), key=lambda item: item.name.casefold()))
+        items.extend(
+            (record, obj)
+            for obj in sorted(objects_for_record(record), key=lambda item: item.name.casefold())
+        )
     return items
 
 
@@ -1962,12 +2134,17 @@ def build_texture_spritesheet(
         if cache_key and cache_key in source_cache:
             source = source_cache[cache_key]
             if source is not None and uv_requires_projection(obj):
-                source = projected_source_image(source, object_uv_bounds(obj), object_image_extension(obj))
+                source = projected_source_image(
+                    source, object_uv_bounds(obj), object_image_extension(obj)
+                )
                 cache_key = f"{cache_key}|projection:{obj.name}"
             if source is not None:
                 source = bleed_transparent_pixels(source)
             elapsed = time.perf_counter() - started
-            port_log(log_path, f"{entry['name']}: [{index}/{len(items)}] reused cached image ({elapsed:.2f}s)")
+            port_log(
+                log_path,
+                f"{entry['name']}: [{index}/{len(items)}] reused cached image ({elapsed:.2f}s)",
+            )
             sources.append((record, obj, source, cache_key))
             continue
         source = load_image_pixels(source_path)
@@ -1975,15 +2152,23 @@ def build_texture_spritesheet(
             source_cache[cache_key] = bleed_transparent_pixels(source)
             source = source_cache[cache_key]
         if source is not None and uv_requires_projection(obj):
-            source = projected_source_image(source, object_uv_bounds(obj), object_image_extension(obj))
+            source = projected_source_image(
+                source, object_uv_bounds(obj), object_image_extension(obj)
+            )
             cache_key = f"{cache_key}|projection:{obj.name}"
         if source is not None:
             source = bleed_transparent_pixels(source)
         elapsed = time.perf_counter() - started
         if source is None:
-            port_log(log_path, f"{entry['name']}: [{index}/{len(items)}] no source image ({elapsed:.2f}s)")
+            port_log(
+                log_path,
+                f"{entry['name']}: [{index}/{len(items)}] no source image ({elapsed:.2f}s)",
+            )
         else:
-            port_log(log_path, f"{entry['name']}: [{index}/{len(items)}] loaded {source[0]}x{source[1]} ({elapsed:.2f}s)")
+            port_log(
+                log_path,
+                f"{entry['name']}: [{index}/{len(items)}] loaded {source[0]}x{source[1]} ({elapsed:.2f}s)",
+            )
         sources.append((record, obj, source, cache_key))
 
     unreadable = [obj.name for _, obj, source, _ in sources if source is None]
@@ -2009,26 +2194,43 @@ def build_texture_spritesheet(
             obj_uv.uv_offset_v = 0.0
         save_png(path, *primary)
         props.use_source_uv_transforms = False
-        port_log(log_path, f"{entry['name']}: preserved original UV layout using the primary source image")
+        port_log(
+            log_path,
+            f"{entry['name']}: preserved original UV layout using the primary source image",
+        )
         return True
 
     groups = []
     grouped_sources = {}
     for record, obj, source, cache_key in sources:
         if source is None or not cache_key:
-            groups.append({"records": [record], "objects": [obj], "source": source, "key": obj.name})
+            groups.append(
+                {"records": [record], "objects": [obj], "source": source, "key": obj.name}
+            )
             continue
         group = grouped_sources.get(cache_key)
         if group is None:
-            group = {"records": [], "objects": [], "source": source, "key": cache_key, "projected": "|projection:" in cache_key}
+            group = {
+                "records": [],
+                "objects": [],
+                "source": source,
+                "key": cache_key,
+                "projected": "|projection:" in cache_key,
+            }
             grouped_sources[cache_key] = group
             groups.append(group)
         group["records"].append(record)
         group["objects"].append(obj)
 
     columns, rows = atlas_grid(len(groups))
-    max_source_width = max((group["source"][0] for group in groups if group["source"] is not None), default=entry["width"])
-    max_source_height = max((group["source"][1] for group in groups if group["source"] is not None), default=entry["height"])
+    max_source_width = max(
+        (group["source"][0] for group in groups if group["source"] is not None),
+        default=entry["width"],
+    )
+    max_source_height = max(
+        (group["source"][1] for group in groups if group["source"] is not None),
+        default=entry["height"],
+    )
     width, height, cell_width, cell_height = capped_atlas_dimensions(
         entry["width"], entry["height"], max_source_width, max_source_height, columns, rows
     )
@@ -2058,17 +2260,37 @@ def build_texture_spritesheet(
             for record, obj in zip(records_in_group, objects):
                 if update_uv_transforms:
                     set_object_uv_fit(obj, origin_u, origin_v, rect_u, rect_v)
-                    port_log(log_path, f"{entry['name']}: {obj.name} guide-cell UV transform {object_uv_transform_summary(obj)}")
+                    port_log(
+                        log_path,
+                        f"{entry['name']}: {obj.name} guide-cell UV transform {object_uv_transform_summary(obj)}",
+                    )
                 if draw_missing_guides:
-                    port_log(log_path, f"{entry['name']}: drawing UV guide for {obj.name} ({len(obj.data.polygons)} polygon(s))")
+                    port_log(
+                        log_path,
+                        f"{entry['name']}: drawing UV guide for {obj.name} ({len(obj.data.polygons)} polygon(s))",
+                    )
                     started = time.perf_counter()
                     draw_object_uvs(pixels, width, height, obj, record, props)
-                    port_log(log_path, f"{entry['name']}: UV guide for {obj.name} done ({time.perf_counter() - started:.2f}s)")
+                    port_log(
+                        log_path,
+                        f"{entry['name']}: UV guide for {obj.name} done ({time.perf_counter() - started:.2f}s)",
+                    )
             continue
-        port_log(log_path, f"{entry['name']}: blitting group {index + 1}/{len(groups)} ({len(objects)} object(s)) into cell ({column}, {row})")
+        port_log(
+            log_path,
+            f"{entry['name']}: blitting group {index + 1}/{len(groups)} ({len(objects)} object(s)) into cell ({column}, {row})",
+        )
         started = time.perf_counter()
         draw_x, draw_y, draw_width, draw_height = blit_image_fit(
-            pixels, width, height, source, cell_x, cell_y, cell_width, cell_height, ATLAS_GUTTER_PIXELS
+            pixels,
+            width,
+            height,
+            source,
+            cell_x,
+            cell_y,
+            cell_width,
+            cell_height,
+            ATLAS_GUTTER_PIXELS,
         )
         port_log(
             log_path,
@@ -2077,13 +2299,25 @@ def build_texture_spritesheet(
         if update_uv_transforms:
             for obj in objects:
                 if group["projected"]:
-                    set_object_uv_fit(obj, draw_x / width, draw_y / height, draw_width / width, draw_height / height)
+                    set_object_uv_fit(
+                        obj,
+                        draw_x / width,
+                        draw_y / height,
+                        draw_width / width,
+                        draw_height / height,
+                    )
                     transform_mode = "projection-fit"
                 else:
                     # One unprojected source image occupies this complete cell.
                     # Every mesh sampling it must retain the same source UVs,
                     # not stretch its own UV bounds to the cell.
-                    set_object_uv_tile(obj, draw_x / width, draw_y / height, draw_width / width, draw_height / height)
+                    set_object_uv_tile(
+                        obj,
+                        draw_x / width,
+                        draw_y / height,
+                        draw_width / width,
+                        draw_height / height,
+                    )
                     transform_mode = "shared-image-tile"
                 port_log(
                     log_path,
@@ -2139,9 +2373,17 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
     records_by_texture = records_grouped_by_texture(props)
     explicit_map = props.texture_map()
     texture_source_dir = resolve_file(props.texture_source_dir)
-    port_log(log_path, f"Texture source folder: {texture_source_dir if texture_source_dir else '<none>'}")
-    port_log(log_path, f"Texture groups: {', '.join(f'{key}={len(value)}' for key, value in records_by_texture.items()) or '<none>'}")
-    port_log(log_path, f"Auto pack source UVs: {props.auto_pack_source_uvs}; use source UV transforms: {props.use_source_uv_transforms}")
+    port_log(
+        log_path, f"Texture source folder: {texture_source_dir if texture_source_dir else '<none>'}"
+    )
+    port_log(
+        log_path,
+        f"Texture groups: {', '.join(f'{key}={len(value)}' for key, value in records_by_texture.items()) or '<none>'}",
+    )
+    port_log(
+        log_path,
+        f"Auto pack source UVs: {props.auto_pack_source_uvs}; use source UV transforms: {props.use_source_uv_transforms}",
+    )
     if props.auto_pack_source_uvs:
         port_log(log_path, "Assigning automatic object UV tiles")
         assign_texture_uv_tiles(records_by_texture)
@@ -2152,14 +2394,20 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
     for index, entry in enumerate(entries, 1):
         name = entry["name"]
         path = output_dir / f"{name}.png"
-        port_log(log_path, f"[{index}/{len(entries)}] Processing {name} ({entry['width']}x{entry['height']})")
+        port_log(
+            log_path,
+            f"[{index}/{len(entries)}] Processing {name} ({entry['width']}x{entry['height']})",
+        )
         if is_special_texture(name):
             if not props.replace_special_textures:
                 port_log(log_path, f"{name}: preserving native special map")
                 continue
             default_color = special_texture_default_color(name)
             records = records_by_texture.get(base_texture_name(name), [])
-            port_log(log_path, f"{name}: special map, base records={len(records)}, default={default_color}")
+            port_log(
+                log_path,
+                f"{name}: special map, base records={len(records)}, default={default_color}",
+            )
             special_map = dict(explicit_map)
             if Path(special_map.get(name, "")).name == path.name:
                 special_map.pop(name, None)
@@ -2168,8 +2416,8 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
                 entry,
                 records,
                 props,
-                source_path_for_item=lambda record, obj, texture=name, mapping=special_map: object_special_texture_path(
-                    record, obj, texture, mapping, texture_source_dir
+                source_path_for_item=lambda record, obj, texture=name, mapping=special_map: (
+                    object_special_texture_path(record, obj, texture, mapping, texture_source_dir)
                 ),
                 empty_color=default_color,
                 draw_missing_guides=False,
@@ -2179,7 +2427,9 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
             ):
                 replacements.append(f"{name}={path.name}")
             else:
-                port_log(log_path, f"{name}: no valid special-map source; preserving native G4TX entry")
+                port_log(
+                    log_path, f"{name}: no valid special-map source; preserving native G4TX entry"
+                )
                 discard_generated_atlas(texture_entry(props, name), path)
         else:
             records = records_by_texture.get(name, [])
@@ -2192,10 +2442,15 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
                     port_log(log_path, f"{name}: retaining native shared eye/mouth atlas")
                 continue
             missing_sources = [
-                obj.name for record, obj in texture_items_for_records(records) if not object_texture_path(record, obj)
+                obj.name
+                for record, obj in texture_items_for_records(records)
+                if not object_texture_path(record, obj)
             ]
             if missing_sources:
-                port_log(log_path, f"{name}: missing source image for {', '.join(missing_sources)}; preserving native G4TX entry")
+                port_log(
+                    log_path,
+                    f"{name}: missing source image for {', '.join(missing_sources)}; preserving native G4TX entry",
+                )
                 discard_generated_atlas(texture_entry(props, name), path)
                 continue
             if build_texture_spritesheet(path, entry, records, props, log_path=log_path):
@@ -2204,10 +2459,12 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
                 if atlas_entry is not None:
                     atlas_entry.atlas_signature = atlas_signature(name, records)
                     atlas_size = load_image_pixels(str(path))
-                    dimensions = f"{atlas_size[0]}x{atlas_size[1]}" if atlas_size is not None else "unknown size"
-                    atlas_entry.atlas_summary = (
-                        f"{len(texture_items_for_records(records))} object(s), {dimensions}, {path.name}"
+                    dimensions = (
+                        f"{atlas_size[0]}x{atlas_size[1]}"
+                        if atlas_size is not None
+                        else "unknown size"
                     )
+                    atlas_entry.atlas_summary = f"{len(texture_items_for_records(records))} object(s), {dimensions}, {path.name}"
             else:
                 port_log(log_path, f"{name}: unreadable source; preserving native G4TX entry")
                 discard_generated_atlas(texture_entry(props, name), path)
@@ -2225,7 +2482,9 @@ def generate_texture_png_set(context, output_dir: Path, log_path: Path | None = 
     return len(replacements)
 
 
-def build_expression_pool_atlas(props: G4PortSceneSettings, output_dir: Path, log_path: Path | None = None) -> Path:
+def build_expression_pool_atlas(
+    props: G4PortSceneSettings, output_dir: Path, log_path: Path | None = None
+) -> Path:
     texture_name = shared_face_texture_key([entry.texture_name for entry in props.texture_entries])
     entry = texture_entry(props, texture_name)
     if entry is None:
@@ -2236,7 +2495,11 @@ def build_expression_pool_atlas(props: G4PortSceneSettings, output_dir: Path, lo
     original_model = resolve_file(props.original_model)
     raw_root = infer_data_root(original_model) if original_model.is_file() else None
     g4tx_path = original_g4tx_path(raw_root, props.model_rel) if raw_root is not None else None
-    source_entry = next((item for item in parse_g4tx_entries(g4tx_path) if item["name"] == texture_name), None) if g4tx_path else None
+    source_entry = (
+        next((item for item in parse_g4tx_entries(g4tx_path) if item["name"] == texture_name), None)
+        if g4tx_path
+        else None
+    )
     if source_entry is None:
         raise RuntimeError(f"Native G4TX entry not found: {texture_name}")
     width, height = source_entry["width"], source_entry["height"]
@@ -2274,7 +2537,11 @@ def build_expression_pool_atlas(props: G4PortSceneSettings, output_dir: Path, lo
     props.texture_source_dir = str(output_dir)
     # Pool cells contain complete face expressions.  The source face and mouth
     # therefore both sample Cell 1 (top-left) instead of spanning all eight.
-    face_records = [record for record in props.records if is_face_atlas_record(record) and record.texture_key == texture_name]
+    face_records = [
+        record
+        for record in props.records
+        if is_face_atlas_record(record) and record.texture_key == texture_name
+    ]
     origin_u = 0.0
     origin_v = (FACE_ATLAS_ROWS - 1) / FACE_ATLAS_ROWS
     scale_u = 1.0 / FACE_ATLAS_COLUMNS
@@ -2322,7 +2589,13 @@ def legacy_native_mesh_matches_source(obj, original_model: Path, native_index: i
         current_uv = uv_layer.data[loop.index].uv
         if abs(current_uv.x - native_uv[0]) > 1e-5 or abs(current_uv.y - native_uv[1]) > 1e-5:
             return False
-    return all(abs(value - expected) <= 1e-5 for row, expected_row in zip(obj.matrix_world, ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))) for value, expected in zip(row, expected_row))
+    return all(
+        abs(value - expected) <= 1e-5
+        for row, expected_row in zip(
+            obj.matrix_world, ((1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
+        )
+        for value, expected in zip(row, expected_row)
+    )
 
 
 def has_unchanged_native_roundtrip(props: G4PortSceneSettings, original_model: Path) -> bool:
@@ -2352,12 +2625,15 @@ def has_unchanged_native_roundtrip(props: G4PortSceneSettings, original_model: P
         for obj in objects:
             if obj.get("g4_native_model_source") != source:
                 return False
-            signature_matches = (
-                obj.get("g4_native_roundtrip_signature_version") == NATIVE_ROUNDTRIP_SIGNATURE_VERSION
-                and obj.get("g4_native_roundtrip_signature") == native_mesh_signature(obj)
-            )
+            signature_matches = obj.get(
+                "g4_native_roundtrip_signature_version"
+            ) == NATIVE_ROUNDTRIP_SIGNATURE_VERSION and obj.get(
+                "g4_native_roundtrip_signature"
+            ) == native_mesh_signature(obj)
             if not signature_matches:
-                if not legacy_native_mesh_matches_source(obj, original_model, record.original_index):
+                if not legacy_native_mesh_matches_source(
+                    obj, original_model, record.original_index
+                ):
                     return False
                 obj["g4_native_roundtrip_signature"] = native_mesh_signature(obj)
                 obj["g4_native_roundtrip_signature_version"] = NATIVE_ROUNDTRIP_SIGNATURE_VERSION
@@ -2405,7 +2681,10 @@ def copy_unchanged_native_roundtrip(
 
 def write_uv_export_trace(props: G4PortSceneSettings, config: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    lines = ["G4 atlas UV export trace", f"Texture replacements: {config.get('texture_replacements', {})}"]
+    lines = [
+        "G4 atlas UV export trace",
+        f"Texture replacements: {config.get('texture_replacements', {})}",
+    ]
     for record in config.get("records", []):
         transforms = record.get("source_uv_transforms", {})
         lines.append(
@@ -2413,7 +2692,9 @@ def write_uv_export_trace(props: G4PortSceneSettings, config: dict, path: Path) 
             f"record_scale={record.get('uv_scale', [1.0, 1.0])} record_offset={record.get('uv_offset', [0.0, 0.0])}"
         )
         for name, transform in transforms.items():
-            lines.append(f"  {name}: scale={transform.get('scale')} offset={transform.get('offset')}")
+            lines.append(
+                f"  {name}: scale={transform.get('scale')} offset={transform.get('offset')}"
+            )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -2421,7 +2702,12 @@ def enforce_g4_uv_orientation(props: G4PortSceneSettings) -> bool:
     """G4 stores V upside-down; custom atlas transforms require the matching pack flip."""
     if props.texture_mode != "custom":
         return False
-    if not (props.texture_map() or props.generate_png_set_on_export or props.use_source_uv_transforms or props.auto_pack_source_uvs):
+    if not (
+        props.texture_map()
+        or props.generate_png_set_on_export
+        or props.use_source_uv_transforms
+        or props.auto_pack_source_uvs
+    ):
         return False
     if props.global_uv_flip_y:
         return False
@@ -2441,16 +2727,24 @@ def run_port(context, filepath: str = "") -> tuple[dict, Path]:
         )
     raw_root = infer_data_root(original_model)
     if raw_root is None:
-        raise RuntimeError("The original model must be inside a data/common or data/dx11 filesystem tree.")
+        raise RuntimeError(
+            "The original model must be inside a data/common or data/dx11 filesystem tree."
+        )
     source_g4tx = original_g4tx_path(raw_root, props.model_rel)
     if source_g4tx is None:
         raise RuntimeError(f"Original G4TX not found in DX11 or NX for {props.model_rel}")
 
-    package_root = Path(bpy.path.abspath(filepath)) if filepath else resolve_file(getattr(prefs, "output_root", ""))
+    package_root = (
+        Path(bpy.path.abspath(filepath))
+        if filepath
+        else resolve_file(getattr(prefs, "output_root", ""))
+    )
     if enforce_g4_uv_orientation(props):
         port_log(None, "Enabled Global Flip V for custom atlas export (G4 stores V inverted)")
     if has_unchanged_native_roundtrip(props, original_model):
-        report = copy_unchanged_native_roundtrip(props, original_model, raw_root, package_root, source_g4tx)
+        report = copy_unchanged_native_roundtrip(
+            props, original_model, raw_root, package_root, source_g4tx
+        )
         cache = resolve_file(getattr(prefs, "cache_dir", ""), default_cache_dir())
         cache.mkdir(parents=True, exist_ok=True)
         report_path = cache / "export_report.json"
@@ -2469,7 +2763,8 @@ def run_port(context, filepath: str = "") -> tuple[dict, Path]:
     if props.texture_mode == "custom":
         atlas_rows = atlas_status_rows(props)
         refresh_needed = [
-            row for row in atlas_rows
+            row
+            for row in atlas_rows
             if row["state"] in {"native", "stale"} and not row.get("shared_face", False)
         ]
         warnings = [row for row in atlas_rows if row["state"] == "warning"]
@@ -2480,7 +2775,9 @@ def run_port(context, filepath: str = "") -> tuple[dict, Path]:
             generate_texture_png_set(context, package_root / "texture_sources" / model_name)
         elif refresh_needed:
             names = ", ".join(row["name"] for row in refresh_needed)
-            port_log(None, f"Prepared atlas missing or stale for {names}; preserving native G4TX entries")
+            port_log(
+                None, f"Prepared atlas missing or stale for {names}; preserving native G4TX entries"
+            )
 
     if not props.use_source_uv_transforms and not props.auto_pack_source_uvs:
         reset_uv_tiles(props)
@@ -2508,8 +2805,7 @@ def run_port(context, filepath: str = "") -> tuple[dict, Path]:
     write_uv_export_trace(props, config_data, trace_path)
 
     needs_pillow = props.texture_mode == "custom" and any(
-        Path(path).suffix.lower() not in {".dds", ".nxtch"}
-        for path in props.texture_map().values()
+        Path(path).suffix.lower() not in {".dds", ".nxtch"} for path in props.texture_map().values()
     )
     command = [
         export_python(prefs, needs_pillow),
@@ -2587,7 +2883,9 @@ class LEVEL5_G4PORT_UL_joint_aliases(UIList):
 class LEVEL5_G4PORT_OT_load_original_model(Operator, ImportHelper):
     bl_idname = "level5_g4_port.load_original_model"
     bl_label = "Choose Original G4MD/G4PKM"
-    bl_description = "Read an original G4MD/G4PKM and create editable records from its native meshes/materials"
+    bl_description = (
+        "Read an original G4MD/G4PKM and create editable records from its native meshes/materials"
+    )
 
     filename_ext = ".g4md"
     filter_glob: StringProperty(default="*.g4md;*.g4pkm", options={"HIDDEN"})
@@ -2598,7 +2896,9 @@ class LEVEL5_G4PORT_OT_load_original_model(Operator, ImportHelper):
             self.report({"ERROR"}, "Select a G4MD or G4PKM model")
             return {"CANCELLED"}
         try:
-            apply_original_model_to_settings(settings(context), path, run_model_probe(path, addon_preferences()))
+            apply_original_model_to_settings(
+                settings(context), path, run_model_probe(path, addon_preferences())
+            )
         except Exception as exc:
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
@@ -2615,7 +2915,9 @@ class LEVEL5_G4PORT_OT_add_record(Operator):
         record = props.records.add()
         selected = mesh_objects(True)
         record.output_name = selected[0].name if selected else "new_record"
-        record.material_name = selected[0].active_material.name if selected and selected[0].active_material else ""
+        record.material_name = (
+            selected[0].active_material.name if selected and selected[0].active_material else ""
+        )
         record.match_names = join_csv(obj.name for obj in selected) if selected else "*"
         props.active_record = len(props.records) - 1
         props.use_preset_file = False
@@ -2654,7 +2956,9 @@ class LEVEL5_G4PORT_OT_guess_assignments(Operator):
 class LEVEL5_G4PORT_OT_use_active_texture(Operator):
     bl_idname = "level5_g4_port.use_active_texture"
     bl_label = "Use Active Texture"
-    bl_description = "Use the active object's image texture as the custom replacement for the active record"
+    bl_description = (
+        "Use the active object's image texture as the custom replacement for the active record"
+    )
 
     def execute(self, context):
         props = settings(context)
@@ -2670,14 +2974,19 @@ class LEVEL5_G4PORT_OT_use_active_texture(Operator):
         if active is not None and active.type == "MESH":
             active.level5_g4_port.source_texture = image_path
         props.use_preset_file = False
-        self.report({"INFO"}, f"Atlas source set for {active.name if active else record.output_name}: {Path(image_path).name}")
+        self.report(
+            {"INFO"},
+            f"Atlas source set for {active.name if active else record.output_name}: {Path(image_path).name}",
+        )
         return {"FINISHED"}
 
 
 class LEVEL5_G4PORT_OT_generate_texture_pngs(Operator):
     bl_idname = "level5_g4_port.prepare_atlas"
     bl_label = "Prepare Atlas"
-    bl_description = "Build only the assigned base-texture atlases and preserve every other native G4TX entry"
+    bl_description = (
+        "Build only the assigned base-texture atlases and preserve every other native G4TX entry"
+    )
 
     def execute(self, context):
         prefs = addon_preferences()
@@ -2686,7 +2995,10 @@ class LEVEL5_G4PORT_OT_generate_texture_pngs(Operator):
         package_root = resolve_file(getattr(prefs, "output_root", ""), default_output_root())
         model_name = Path(props.model_rel).name or "model"
         output_dir = package_root / "texture_sources" / model_name
-        log_path = resolve_file(getattr(prefs, "cache_dir", ""), default_cache_dir()) / "generate_png_set.log"
+        log_path = (
+            resolve_file(getattr(prefs, "cache_dir", ""), default_cache_dir())
+            / "generate_png_set.log"
+        )
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text("", encoding="utf-8")
         try:
@@ -2721,9 +3033,14 @@ class LEVEL5_G4PORT_OT_build_expression_atlas(Operator):
         props = settings(context)
         package_root = resolve_file(getattr(prefs, "output_root", ""), default_output_root())
         model_name = Path(props.model_rel).name or "model"
-        log_path = resolve_file(getattr(prefs, "cache_dir", ""), default_cache_dir()) / "atlas_uv_trace.log"
+        log_path = (
+            resolve_file(getattr(prefs, "cache_dir", ""), default_cache_dir())
+            / "atlas_uv_trace.log"
+        )
         try:
-            output_path = build_expression_pool_atlas(props, package_root / "texture_sources" / model_name, log_path)
+            output_path = build_expression_pool_atlas(
+                props, package_root / "texture_sources" / model_name, log_path
+            )
         except Exception as exc:
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
@@ -2738,9 +3055,15 @@ class LEVEL5_G4PORT_OT_use_existing_expression_atlas(Operator):
 
     def execute(self, context):
         props = settings(context)
-        texture_name = shared_face_texture_key([entry.texture_name for entry in props.texture_entries])
+        texture_name = shared_face_texture_key(
+            [entry.texture_name for entry in props.texture_entries]
+        )
         entry = texture_entry(props, texture_name)
-        source = Path(bpy.path.abspath(entry.replacement_path)) if entry is not None and entry.replacement_path else None
+        source = (
+            Path(bpy.path.abspath(entry.replacement_path))
+            if entry is not None and entry.replacement_path
+            else None
+        )
         if entry is None or source is None or load_image_pixels(str(source)) is None:
             self.report({"ERROR"}, "Choose a valid prepared 4x2 facial atlas first")
             return {"CANCELLED"}
@@ -2812,7 +3135,9 @@ class LEVEL5_G4PORT_OT_remove_joint_alias(Operator):
         props = settings(context)
         if props.joint_aliases:
             props.joint_aliases.remove(props.active_joint_alias)
-            props.active_joint_alias = min(props.active_joint_alias, max(0, len(props.joint_aliases) - 1))
+            props.active_joint_alias = min(
+                props.active_joint_alias, max(0, len(props.joint_aliases) - 1)
+            )
         return {"FINISHED"}
 
 
@@ -2848,7 +3173,10 @@ class LEVEL5_G4PORT_OT_analyze(Operator):
             props.analyze_only = previous
         unresolved = report.get("unresolved_influences", 0)
         records = len(report.get("records", [])) if isinstance(report.get("records"), list) else 0
-        self.report({"INFO"}, f"Analysis OK: {records} records, unresolved influences {unresolved}. {report_path}")
+        self.report(
+            {"INFO"},
+            f"Analysis OK: {records} records, unresolved influences {unresolved}. {report_path}",
+        )
         return {"FINISHED"}
 
 
@@ -2878,7 +3206,9 @@ class EXPORT_OT_level5_g4_port(Operator, ExportHelper):
         validation = report.get("validation") or {}
         vertices = validation.get("vertices_checked", report.get("vertices", "?"))
         indices = validation.get("indices_checked", report.get("indices", "?"))
-        self.report({"INFO"}, f"G4 port exported: {vertices} vertices, {indices} indices. {report_path}")
+        self.report(
+            {"INFO"}, f"G4 port exported: {vertices} vertices, {indices} indices. {report_path}"
+        )
         settings(context).show_export = False
         return {"FINISHED"}
 
@@ -2968,7 +3298,9 @@ def draw_original_and_mapping(layout, context, include_actions: bool) -> None:
             edit = box.box()
             edit.prop(alias, "source_group")
             edit.prop(alias, "target_joint")
-        unresolved = sum(1 for alias in props.joint_aliases if alias.source_group and not alias.target_joint)
+        unresolved = sum(
+            1 for alias in props.joint_aliases if alias.source_group and not alias.target_joint
+        )
         if unresolved:
             box.label(text=f"{unresolved} unmapped group(s)", icon="ERROR")
         box.prop(props, "strict_skinning")
@@ -3016,7 +3348,11 @@ def draw_original_and_mapping(layout, context, include_actions: bool) -> None:
             box.prop(record, "secondary_weight_scale")
             box.prop(record, "weight_anchor_joint")
             box.prop(record, "texture_key")
-            box.operator(LEVEL5_G4PORT_OT_use_active_texture.bl_idname, text="Use Active Image as Atlas Source", icon="TEXTURE")
+            box.operator(
+                LEVEL5_G4PORT_OT_use_active_texture.bl_idname,
+                text="Use Active Image as Atlas Source",
+                icon="TEXTURE",
+            )
             box.prop(record, "fallback_degenerate")
             box.prop(record, "force_layout_material")
             if record.force_layout_material:
@@ -3037,7 +3373,12 @@ def draw_original_and_mapping(layout, context, include_actions: bool) -> None:
         box.prop(props, "texture_platform")
         for status in atlas_status_rows(props):
             row = box.row(align=True)
-            icon = {"ready": "CHECKMARK", "manual": "CHECKMARK", "stale": "FILE_REFRESH", "warning": "ERROR"}.get(status["state"], "INFO")
+            icon = {
+                "ready": "CHECKMARK",
+                "manual": "CHECKMARK",
+                "stale": "FILE_REFRESH",
+                "warning": "ERROR",
+            }.get(status["state"], "INFO")
             row.label(text=status["name"], icon=icon)
             row.label(text=status["message"])
             if status["repeated"]:
@@ -3053,8 +3394,13 @@ def draw_original_and_mapping(layout, context, include_actions: bool) -> None:
         face_key = shared_face_texture_key([entry.texture_name for entry in props.texture_entries])
         if face_key:
             expression_box = box.box()
-            expression_box.label(text=f"Expression pool for {face_key} (4x2)", icon="SEQ_CHROMA_SCOPE")
-            expression_box.label(text="eye_10 and mouth_10 keep the native atlas unless a 4x2 source is explicitly accepted", icon="INFO")
+            expression_box.label(
+                text=f"Expression pool for {face_key} (4x2)", icon="SEQ_CHROMA_SCOPE"
+            )
+            expression_box.label(
+                text="eye_10 and mouth_10 keep the native atlas unless a 4x2 source is explicitly accepted",
+                icon="INFO",
+            )
             face_entry = texture_entry(props, face_key)
             if face_entry is not None:
                 expression_box.prop(face_entry, "replacement_path", text="Existing 4x2 Atlas")
@@ -3063,7 +3409,11 @@ def draw_original_and_mapping(layout, context, include_actions: bool) -> None:
             row.operator(LEVEL5_G4PORT_OT_initialize_expression_pool.bl_idname, icon="ADD")
             row.operator(LEVEL5_G4PORT_OT_build_expression_atlas.bl_idname, icon="IMAGE_DATA")
             for index, item in enumerate(props.expression_pool):
-                expression_box.prop(item, "image_path", text=f"Cell {index % FACE_ATLAS_COLUMNS + 1}, row {index // FACE_ATLAS_COLUMNS + 1} (top first)")
+                expression_box.prop(
+                    item,
+                    "image_path",
+                    text=f"Cell {index % FACE_ATLAS_COLUMNS + 1}, row {index // FACE_ATLAS_COLUMNS + 1} (top first)",
+                )
         box.prop(props, "generate_png_set_on_export")
         box.prop(props, "use_source_uv_transforms")
         box.prop(props, "auto_pack_source_uvs")
@@ -3108,7 +3458,10 @@ def draw_export_settings(layout, props: G4PortSceneSettings, operator=None) -> N
         statuses = atlas_status_rows(props)
         unresolved = [row for row in statuses if row["state"] in {"native", "stale", "warning"}]
         if unresolved:
-            box.label(text=f"{len(unresolved)} texture(s) will keep their native G4TX payload", icon="INFO")
+            box.label(
+                text=f"{len(unresolved)} texture(s) will keep their native G4TX payload",
+                icon="INFO",
+            )
         draw_texture_replacements(layout, props)
     box.prop(props, "selected_only")
     box.prop(props, "apply_modifiers")
@@ -3148,34 +3501,36 @@ classes = []
 if IS_STANDALONE_ADDON:
     classes.append(G4PortPreferences)
 
-classes.extend([
-    G4PortObjectSettings,
-    G4PortJointAlias,
-    G4PortTextureReplacement,
-    G4PortExpressionImage,
-    G4PortRecord,
-    G4PortSceneSettings,
-    LEVEL5_G4PORT_UL_records,
-    LEVEL5_G4PORT_UL_joint_aliases,
-    LEVEL5_G4PORT_OT_load_original_model,
-    LEVEL5_G4PORT_OT_add_record,
-    LEVEL5_G4PORT_OT_remove_record,
-    LEVEL5_G4PORT_OT_assign_selected,
-    LEVEL5_G4PORT_OT_guess_assignments,
-    LEVEL5_G4PORT_OT_use_active_texture,
-    LEVEL5_G4PORT_OT_generate_texture_pngs,
-    LEVEL5_G4PORT_OT_initialize_expression_pool,
-    LEVEL5_G4PORT_OT_build_expression_atlas,
-    LEVEL5_G4PORT_OT_use_existing_expression_atlas,
-    LEVEL5_G4PORT_OT_reset_object_uv_tiles,
-    LEVEL5_G4PORT_OT_detect_vertex_groups,
-    LEVEL5_G4PORT_OT_auto_map_joints,
-    LEVEL5_G4PORT_OT_add_joint_alias,
-    LEVEL5_G4PORT_OT_remove_joint_alias,
-    LEVEL5_G4PORT_OT_analyze,
-    EXPORT_OT_level5_g4_port,
-    LEVEL5_G4PORT_PT_panel,
-])
+classes.extend(
+    [
+        G4PortObjectSettings,
+        G4PortJointAlias,
+        G4PortTextureReplacement,
+        G4PortExpressionImage,
+        G4PortRecord,
+        G4PortSceneSettings,
+        LEVEL5_G4PORT_UL_records,
+        LEVEL5_G4PORT_UL_joint_aliases,
+        LEVEL5_G4PORT_OT_load_original_model,
+        LEVEL5_G4PORT_OT_add_record,
+        LEVEL5_G4PORT_OT_remove_record,
+        LEVEL5_G4PORT_OT_assign_selected,
+        LEVEL5_G4PORT_OT_guess_assignments,
+        LEVEL5_G4PORT_OT_use_active_texture,
+        LEVEL5_G4PORT_OT_generate_texture_pngs,
+        LEVEL5_G4PORT_OT_initialize_expression_pool,
+        LEVEL5_G4PORT_OT_build_expression_atlas,
+        LEVEL5_G4PORT_OT_use_existing_expression_atlas,
+        LEVEL5_G4PORT_OT_reset_object_uv_tiles,
+        LEVEL5_G4PORT_OT_detect_vertex_groups,
+        LEVEL5_G4PORT_OT_auto_map_joints,
+        LEVEL5_G4PORT_OT_add_joint_alias,
+        LEVEL5_G4PORT_OT_remove_joint_alias,
+        LEVEL5_G4PORT_OT_analyze,
+        EXPORT_OT_level5_g4_port,
+        LEVEL5_G4PORT_PT_panel,
+    ]
+)
 
 
 def register():

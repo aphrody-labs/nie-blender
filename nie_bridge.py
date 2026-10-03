@@ -84,7 +84,9 @@ def resolve_nie_exe(context) -> Path | None:
         if p.is_file():
             return p
 
-    game_dir = _game_dir_from_raw_data_root(getattr(prefs, "raw_data_root", "") if prefs is not None else "")
+    game_dir = _game_dir_from_raw_data_root(
+        getattr(prefs, "raw_data_root", "") if prefs is not None else ""
+    )
     if game_dir is None:
         env_dir = os.environ.get("NIE_GAME_DIR")
         if env_dir:
@@ -117,13 +119,17 @@ def resolve_wiki_db(context) -> Path | None:
         if p.is_file():
             return p
 
-    game_dir = _game_dir_from_raw_data_root(getattr(prefs, "raw_data_root", "") if prefs is not None else "")
+    game_dir = _game_dir_from_raw_data_root(
+        getattr(prefs, "raw_data_root", "") if prefs is not None else ""
+    )
     if game_dir is None:
         return None
     mirror_dir = game_dir / "var" / "miroir"
     if not mirror_dir.is_dir():
         return None
-    candidates = sorted(p for p in mirror_dir.glob("inagle-*.sqlite") if p.is_file() and p.stat().st_size > 0)
+    candidates = sorted(
+        p for p in mirror_dir.glob("inagle-*.sqlite") if p.is_file() and p.stat().st_size > 0
+    )
     return candidates[-1] if candidates else None
 
 
@@ -203,7 +209,10 @@ class _NieProcessOperator(Operator):
     def invoke(self, context, event):
         nie_exe = resolve_nie_exe(context)
         if nie_exe is None:
-            self.report({"ERROR"}, "nie.exe introuvable — voir Préférences > nie — G4 Blender Tools > nie.exe")
+            self.report(
+                {"ERROR"},
+                "nie.exe introuvable — voir Préférences > nie — G4 Blender Tools > nie.exe",
+            )
             return {"CANCELLED"}
 
         args = self.build_args(context)
@@ -396,7 +405,9 @@ class NIE_BRIDGE_OT_import_selected(_NieProcessOperator):
         # extrait tout ce qui matche — récupère au passage les frères g4mg/g4sk/g4tx/g4mt requis
         # par `import_scene.level5_g4` pour la géométrie/le squelette/les textures.
         folder = path.rsplit("/", 1)[0] if "/" in path else path
-        tempdir = Path(bpy.app.tempdir) if bpy.app.tempdir else Path(__import__("tempfile").gettempdir())
+        tempdir = (
+            Path(bpy.app.tempdir) if bpy.app.tempdir else Path(__import__("tempfile").gettempdir())
+        )
         self._dest = tempdir / "nie-bridge" / str(abs(hash((path, idx))))
         self._dest.mkdir(parents=True, exist_ok=True)
         return ["vfs", "extract", folder, "--out", str(self._dest)]
@@ -408,7 +419,9 @@ class NIE_BRIDGE_OT_import_selected(_NieProcessOperator):
             return
 
         if extracted.suffix.lower() not in IMPORTABLE_MODEL_EXTENSIONS:
-            self.report({"INFO"}, f"Extrait (aperçu binaire uniquement, pas un modèle) : {extracted}")
+            self.report(
+                {"INFO"}, f"Extrait (aperçu binaire uniquement, pas un modèle) : {extracted}"
+            )
             return
 
         # Appel DIRECT (pas de `bpy.app.timers.register`) : contrairement au bootstrap `--python`
@@ -433,7 +446,9 @@ class NIE_BRIDGE_OT_import_selected(_NieProcessOperator):
 class NIE_BRIDGE_OT_search_chara_waza(_NieThreadOperator):
     bl_idname = "nie_bridge.search_chara_waza"
     bl_label = "Chercher (perso/technique)"
-    bl_description = "Search a character or skill by localized name through the Rust CLI and local mirror"
+    bl_description = (
+        "Search a character or skill by localized name through the Rust CLI and local mirror"
+    )
 
     def prepare(self, context):
         scene = context.scene
@@ -457,7 +472,9 @@ class NIE_BRIDGE_OT_search_chara_waza(_NieThreadOperator):
         if prepared["wiki_db"] is not None and prepared["nie_exe"] is not None:
             try:
                 rows = search_local(prepared["nie_exe"], prepared["wiki_db"], kind, query)
-                mapper = _local_chara_row_to_result if kind == "CHARA" else _local_waza_row_to_result
+                mapper = (
+                    _local_chara_row_to_result if kind == "CHARA" else _local_waza_row_to_result
+                )
                 results.extend(mapper(r) for r in rows)
             except Exception as exc:
                 notices.append(f"miroir local : {exc}")
@@ -520,7 +537,10 @@ class NIE_BRIDGE_UL_results(UIList):
         if self.layout_type in {"DEFAULT", "COMPACT"}:
             row = layout.row(align=True)
             ext = item.path.rsplit(".", 1)[-1].lower() if "." in item.path else ""
-            row.label(text=item.path, icon="MESH_DATA" if f".{ext}" in IMPORTABLE_MODEL_EXTENSIONS else "FILE")
+            row.label(
+                text=item.path,
+                icon="MESH_DATA" if f".{ext}" in IMPORTABLE_MODEL_EXTENSIONS else "FILE",
+            )
             row.label(text=f"{item.size:,} o".replace(",", " "))
         elif self.layout_type == "GRID":
             layout.alignment = "CENTER"
@@ -530,9 +550,15 @@ class NIE_BRIDGE_UL_results(UIList):
         items = getattr(data, propname)
         helpers = bpy.types.UI_UL_list
         flt_flags = helpers.filter_items_by_name(
-            self.filter_name, self.bitflag_filter_item, items, propname="path", reverse=self.use_filter_sort_reverse
+            self.filter_name,
+            self.bitflag_filter_item,
+            items,
+            propname="path",
+            reverse=self.use_filter_sort_reverse,
         )
-        flt_neworder = helpers.sort_items_by_name(items, "path") if self.use_filter_sort_alpha else []
+        flt_neworder = (
+            helpers.sort_items_by_name(items, "path") if self.use_filter_sort_alpha else []
+        )
         return flt_flags, flt_neworder
 
 
@@ -559,9 +585,15 @@ class NIE_BRIDGE_UL_chara_results(UIList):
         items = getattr(data, propname)
         helpers = bpy.types.UI_UL_list
         flt_flags = helpers.filter_items_by_name(
-            self.filter_name, self.bitflag_filter_item, items, propname="name_fr", reverse=self.use_filter_sort_reverse
+            self.filter_name,
+            self.bitflag_filter_item,
+            items,
+            propname="name_fr",
+            reverse=self.use_filter_sort_reverse,
         )
-        flt_neworder = helpers.sort_items_by_name(items, "name_fr") if self.use_filter_sort_alpha else []
+        flt_neworder = (
+            helpers.sort_items_by_name(items, "name_fr") if self.use_filter_sort_alpha else []
+        )
         return flt_flags, flt_neworder
 
 
@@ -601,7 +633,13 @@ class NIE_BRIDGE_PT_panel(Panel):
         layout.operator(NIE_BRIDGE_OT_search.bl_idname, icon="VIEWZOOM")
 
         layout.template_list(
-            "NIE_BRIDGE_UL_results", "", scene, "nie_bridge_results", scene, "nie_bridge_result_index", rows=8
+            "NIE_BRIDGE_UL_results",
+            "",
+            scene,
+            "nie_bridge_results",
+            scene,
+            "nie_bridge_result_index",
+            rows=8,
         )
 
         has_selection = 0 <= scene.nie_bridge_result_index < len(scene.nie_bridge_results)
@@ -626,7 +664,9 @@ class NIE_BRIDGE_PT_panel(Panel):
             rows=8,
         )
 
-        has_selection = 0 <= scene.nie_bridge_chara_result_index < len(scene.nie_bridge_chara_results)
+        has_selection = (
+            0 <= scene.nie_bridge_chara_result_index < len(scene.nie_bridge_chara_results)
+        )
         row = layout.row()
         row.enabled = has_selection
         row.operator(NIE_BRIDGE_OT_use_chara_as_file_query.bl_idname, icon="FILE_FOLDER")
@@ -658,7 +698,9 @@ def register():
         ),
         default="FILES",
     )
-    bpy.types.Scene.nie_bridge_query = StringProperty(name="Requête", description="Sous-chaîne cherchée dans les chemins VFS")
+    bpy.types.Scene.nie_bridge_query = StringProperty(
+        name="Requête", description="Sous-chaîne cherchée dans les chemins VFS"
+    )
     bpy.types.Scene.nie_bridge_ext_filter = StringProperty(
         name="Extension", description="Filtre optionnel par extension (ex. `g4md`, sans le point)"
     )
@@ -668,7 +710,9 @@ def register():
     bpy.types.Scene.nie_bridge_chara_query = StringProperty(
         name="Requête", description="Nom (FR/EN/JA), ID ou code interne d'un personnage/technique"
     )
-    bpy.types.Scene.nie_bridge_chara_results = bpy.props.CollectionProperty(type=NieBridgeCharaResult)
+    bpy.types.Scene.nie_bridge_chara_results = bpy.props.CollectionProperty(
+        type=NieBridgeCharaResult
+    )
     bpy.types.Scene.nie_bridge_chara_result_index = IntProperty(default=-1)
 
 

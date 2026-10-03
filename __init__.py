@@ -28,7 +28,15 @@ from pathlib import Path
 
 import bpy
 from bpy.app.handlers import persistent
-from bpy.props import BoolProperty, CollectionProperty, EnumProperty, FloatProperty, FloatVectorProperty, IntProperty, StringProperty
+from bpy.props import (
+    BoolProperty,
+    CollectionProperty,
+    EnumProperty,
+    FloatProperty,
+    FloatVectorProperty,
+    IntProperty,
+    StringProperty,
+)
 from bpy.types import AddonPreferences, Operator, OperatorFileListElement
 from bpy_extras.io_utils import ImportHelper
 from mathutils import Matrix, Quaternion, Vector
@@ -41,7 +49,9 @@ CHARACTER_BODY_PROFILE_CACHE: dict[Path, dict[int, int]] = {}
 CHARACTER_BODY_MESH_PROFILE_CACHE: dict[Path, dict[int, int]] = {}
 
 
-def update_import_progress(context, completed: int, total: int, status: str, redraw: bool = True) -> None:
+def update_import_progress(
+    context, completed: int, total: int, status: str, redraw: bool = True
+) -> None:
     context.window_manager.progress_update(min(max(0, completed), max(1, total)))
     context.workspace.status_text_set(status)
     for window in context.window_manager.windows:
@@ -73,6 +83,7 @@ def suspended_global_undo(context):
         yield
     finally:
         edit_preferences.use_global_undo = previous
+
 
 if __package__:
     from . import g4_port_addon
@@ -145,9 +156,13 @@ def default_chara_model_xml() -> str:
 
     raw_data_root = os.environ.get("LEVEL5_G4_RAW_ROOT", "")
     if raw_data_root:
-        candidates.extend(sorted(
-            (Path(raw_data_root).expanduser() / "common" / "gamedata" / "character").glob("chara_model*.xml")
-        ))
+        candidates.extend(
+            sorted(
+                (Path(raw_data_root).expanduser() / "common" / "gamedata" / "character").glob(
+                    "chara_model*.xml"
+                )
+            )
+        )
 
     addon_path = Path(__file__).resolve()
     search_dirs = [addon_path.parent, addon_path.parent / "TOOLS", addon_path.parents[1] / "TOOLS"]
@@ -242,12 +257,16 @@ def exporter_environment(prefs: "G4ImporterPreferences", export_dir: Path) -> di
     raw_data_root = bpy.path.abspath(getattr(prefs, "raw_data_root", "") or "")
     if raw_data_root:
         env["LEVEL5_G4_RAW_ROOT"] = raw_data_root
-    chara_model_lookup = bpy.path.abspath(getattr(prefs, "chara_model_lookup", "") or default_chara_model_lookup())
+    chara_model_lookup = bpy.path.abspath(
+        getattr(prefs, "chara_model_lookup", "") or default_chara_model_lookup()
+    )
     if chara_model_lookup:
         env["LEVEL5_G4_CHARA_LOOKUP"] = chara_model_lookup
-    active_chara_models = sorted(
-        (Path(raw_data_root) / "common" / "gamedata" / "character").glob("chara_model*.xml")
-    ) if raw_data_root else []
+    active_chara_models = (
+        sorted((Path(raw_data_root) / "common" / "gamedata" / "character").glob("chara_model*.xml"))
+        if raw_data_root
+        else []
+    )
     chara_model_xml = (
         str(active_chara_models[0])
         if active_chara_models
@@ -430,7 +449,9 @@ class G4ImporterPreferences(AddonPreferences):
         resolved = nie_bridge.resolve_nie_exe(context)
         info_row = shared_box.row()
         info_row.label(
-            text=f"nie.exe: {resolved}" if resolved else "nie.exe: introuvable (voir NIE_GAME_DIR / Raw Data Root)",
+            text=f"nie.exe: {resolved}"
+            if resolved
+            else "nie.exe: introuvable (voir NIE_GAME_DIR / Raw Data Root)",
             icon="CHECKMARK" if resolved else "ERROR",
         )
         shared_box.prop(self, "wiki_db_path")
@@ -486,7 +507,9 @@ def armature_skeleton_info(armature) -> dict | None:
         for bone in bones
     ]
     bind_matrices = [matrix_to_flat_list(bone.matrix_local) for bone in bones]
-    inverse_bind_matrices = [matrix_to_flat_list(bone.matrix_local.inverted_safe()) for bone in bones]
+    inverse_bind_matrices = [
+        matrix_to_flat_list(bone.matrix_local.inverted_safe()) for bone in bones
+    ]
     local_matrices = []
     local_scales = []
     local_rotations_xyzw = []
@@ -681,7 +704,11 @@ def import_native_g4_mesh(native_path: Path, custom_normals: bool = True) -> set
             matrix = global_matrices[index] if index < len(global_matrices) else Matrix.Identity(4)
             bone.matrix = matrix
             child_index = next(
-                (child for child, parent in enumerate(parents) if parent == index and child < len(global_matrices)),
+                (
+                    child
+                    for child, parent in enumerate(parents)
+                    if parent == index and child < len(global_matrices)
+                ),
                 None,
             )
             if child_index is not None:
@@ -757,12 +784,18 @@ def import_native_g4_mesh(native_path: Path, custom_normals: bool = True) -> set
                 for local_index, weight in vertex_influences:
                     if weight <= 0.0:
                         continue
-                    global_index = palette[local_index] if local_index < len(palette) else palette_base + local_index
+                    global_index = (
+                        palette[local_index]
+                        if local_index < len(palette)
+                        else palette_base + local_index
+                    )
                     if not 0 <= global_index < len(names):
                         continue
                     group = groups.get(global_index)
                     if group is None:
-                        group = obj.vertex_groups.new(name=names[global_index] or f"joint_{global_index:03d}")
+                        group = obj.vertex_groups.new(
+                            name=names[global_index] or f"joint_{global_index:03d}"
+                        )
                         groups[global_index] = group
                     group.add([vertex_index], float(weight), "REPLACE")
             modifier = obj.modifiers.new(name="Armature", type="ARMATURE")
@@ -816,7 +849,11 @@ def collapse_duplicate_materials(imported_names: set[str]) -> None:
             if base_name == material.name:
                 continue
             target = bpy.data.materials.get(base_name)
-            if target is None or target == material or not materials_are_compatible(material, target):
+            if (
+                target is None
+                or target == material
+                or not materials_are_compatible(material, target)
+            ):
                 continue
             slot.material = target
             if material.users == 0:
@@ -834,7 +871,9 @@ def mark_native_roundtrip_objects(imported_names: set[str], source_path: Path) -
         obj["g4_native_roundtrip_signature_version"] = NATIVE_ROUNDTRIP_SIGNATURE_VERSION
 
 
-def global_orientation_matrices(names: list[str], parents: list[int], rotations: list[list[float]]) -> list[Matrix]:
+def global_orientation_matrices(
+    names: list[str], parents: list[int], rotations: list[list[float]]
+) -> list[Matrix]:
     local_matrices = []
     for rotation in rotations:
         if len(rotation) != 4:
@@ -935,7 +974,11 @@ def apply_g4_bone_orientation(imported_names: set[str], summary: dict, enabled: 
                 else:
                     original_tail = original_tails.get(bone_name)
                     fallback = (original_tail - head) if original_tail is not None else Vector()
-                    y_axis = fallback.normalized() if fallback.length > 1e-6 else (rotation @ Vector((0.0, 1.0, 0.0))).normalized()
+                    y_axis = (
+                        fallback.normalized()
+                        if fallback.length > 1e-6
+                        else (rotation @ Vector((0.0, 1.0, 0.0))).normalized()
+                    )
                 z_axis = (rotation @ Vector((0.0, 0.0, 1.0))).normalized()
                 edit_bone.tail = head + y_axis * length
                 edit_bone.align_roll(z_axis)
@@ -988,7 +1031,11 @@ def write_debug_log(summary: dict, lines: list[str]) -> None:
 
 
 def image_paths() -> set[str]:
-    return {str(Path(bpy.path.abspath(image.filepath)).resolve()) for image in bpy.data.images if image.filepath}
+    return {
+        str(Path(bpy.path.abspath(image.filepath)).resolve())
+        for image in bpy.data.images
+        if image.filepath
+    }
 
 
 def strip_texture_variant(name: str) -> str:
@@ -1146,7 +1193,8 @@ def material_uses_image(material, path: Path) -> bool:
 def find_material(name: str, diffuse_path: Path | None = None, candidates=None):
     materials = list(candidates) if candidates is not None else list(bpy.data.materials)
     named = [
-        material for material in materials
+        material
+        for material in materials
         if material.name == name or material.name.startswith(f"{name}.")
     ]
     if diffuse_path is not None:
@@ -1223,7 +1271,9 @@ def base_color_texture_node(material, principled):
     tree = material.node_tree
     if tree is None:
         return None
-    image_nodes = [node for node in tree.nodes if node.type == "TEX_IMAGE" and node.image is not None]
+    image_nodes = [
+        node for node in tree.nodes if node.type == "TEX_IMAGE" and node.image is not None
+    ]
     if len(image_nodes) == 1:
         return image_nodes[0]
     return None
@@ -1285,7 +1335,9 @@ def map_surface_kind(material_name: str, diffuse_path: Path | None = None) -> st
     return None
 
 
-def configure_victory_road_map_surface(material, principled, diffuse_path: Path, variants: dict, debug: list[str] | None = None) -> None:
+def configure_victory_road_map_surface(
+    material, principled, diffuse_path: Path, variants: dict, debug: list[str] | None = None
+) -> None:
     kind = map_surface_kind(material.name, diffuse_path)
     if kind is None:
         return
@@ -1339,14 +1391,18 @@ def all_available_texture_paths(summary: dict) -> list[Path]:
     return unique
 
 
-def material_variants_from_index(material_name: str, base_path: Path, by_key: dict[str, dict[str, Path]]) -> dict[str, Path]:
+def material_variants_from_index(
+    material_name: str, base_path: Path, by_key: dict[str, dict[str, Path]]
+) -> dict[str, Path]:
     variants: dict[str, Path] = {}
     for key in material_variant_keys(material_name, base_path):
         variants.update(by_key.get(key, {}))
     return variants
 
 
-def connect_alpha_mask(material, principled, mask_path: Path, debug: list[str] | None = None) -> bool:
+def connect_alpha_mask(
+    material, principled, mask_path: Path, debug: list[str] | None = None
+) -> bool:
     image = load_image(mask_path)
     alpha_input = node_input(principled, "Alpha")
     if image is None or alpha_input is None or material.node_tree is None:
@@ -1367,7 +1423,9 @@ def connect_alpha_mask(material, principled, mask_path: Path, debug: list[str] |
     return True
 
 
-def connect_normal_map(material, principled, normal_path: Path, debug: list[str] | None = None) -> bool:
+def connect_normal_map(
+    material, principled, normal_path: Path, debug: list[str] | None = None
+) -> bool:
     image = load_image(normal_path)
     normal_input = node_input(principled, "Normal")
     if image is None or normal_input is None or material.node_tree is None:
@@ -1833,7 +1891,9 @@ def apply_level5_toon_shader(
             lit_specular.blend_type = "MULTIPLY"
             lit_specular.inputs[0].default_value = 1.0
             lit_specular.location = (380, -720)
-            normal_source = surface_normal if surface_normal is not None else coordinates.outputs["Normal"]
+            normal_source = (
+                surface_normal if surface_normal is not None else coordinates.outputs["Normal"]
+            )
             links.new(normal_source, view_normal.inputs["Vector"])
             links.new(view_normal.outputs["Vector"], sphere_mapping.inputs["Vector"])
             links.new(sphere_mapping.outputs["Vector"], specular_shape.inputs["Vector"])
@@ -1958,7 +2018,9 @@ def apply_level5_toon_shader(
             alpha_separate.location = (610, 600)
             links.new(alpha_texture.outputs["Color"], alpha_separate.inputs["Color"])
             alpha_output = alpha_separate.outputs["Red"]
-    if alpha_output is not None and (alpha_path is not None or name_implies_alpha(material.name, base_path)):
+    if alpha_output is not None and (
+        alpha_path is not None or name_implies_alpha(material.name, base_path)
+    ):
         transparent = nodes.new("ShaderNodeBsdfTransparent")
         transparent.location = (820, 20)
         mix_shader = nodes.new("ShaderNodeMixShader")
@@ -1999,7 +2061,9 @@ def apply_material_texture_variants(
 
     by_key = build_texture_index(textures)
     if debug is not None:
-        debug.append(f"[summary-pass] textures={len(textures)} keys={len(by_key)} materials={len(summary.get('materials', {}))}")
+        debug.append(
+            f"[summary-pass] textures={len(textures)} keys={len(by_key)} materials={len(summary.get('materials', {}))}"
+        )
 
     imported_materials = None
     if imported_names is not None:
@@ -2053,7 +2117,9 @@ def apply_material_texture_variants(
             if debug is not None:
                 debug.append(f"[summary-pass] {material.name}: linked base {diffuse_path.name}")
         elif debug is not None:
-            debug.append(f"[summary-pass] {material.name}: skipped base image={base_image is not None} input={base_input is not None}")
+            debug.append(
+                f"[summary-pass] {material.name}: skipped base image={base_image is not None} input={base_input is not None}"
+            )
 
         alpha_path = first_variant_path(variants, "alpha_red")
         if alpha_path is None and name_implies_alpha(material_name, diffuse_path):
@@ -2069,7 +2135,9 @@ def apply_material_texture_variants(
                 link_to_input(links, sep.outputs["Red"], alpha_input)
                 set_transparent_material(material)
                 if debug is not None:
-                    debug.append(f"[summary-pass] {material.name}: linked alpha mask {alpha_path.name}")
+                    debug.append(
+                        f"[summary-pass] {material.name}: linked alpha mask {alpha_path.name}"
+                    )
             elif debug is not None:
                 debug.append(
                     f"[summary-pass] {material.name}: failed alpha mask {alpha_path.name} "
@@ -2083,7 +2151,9 @@ def apply_material_texture_variants(
                 link_to_input(links, tex.outputs["Alpha"], alpha_input)
                 set_transparent_material(material)
                 if debug is not None:
-                    debug.append(f"[summary-pass] {material.name}: linked base alpha {diffuse_path.name}")
+                    debug.append(
+                        f"[summary-pass] {material.name}: linked base alpha {diffuse_path.name}"
+                    )
         elif name_implies_alpha(material_name, diffuse_path):
             if not connect_base_texture_alpha(material, principled):
                 image = load_image(diffuse_path)
@@ -2093,7 +2163,9 @@ def apply_material_texture_variants(
                     link_to_input(links, tex.outputs["Alpha"], alpha_input)
                     set_transparent_material(material)
                     if debug is not None:
-                        debug.append(f"[summary-pass] {material.name}: linked implied base alpha {diffuse_path.name}")
+                        debug.append(
+                            f"[summary-pass] {material.name}: linked implied base alpha {diffuse_path.name}"
+                        )
 
         normal_path = first_variant_path(variants, "normal", "normal_or_packed")
         if normal_path is not None:
@@ -2106,7 +2178,9 @@ def apply_material_texture_variants(
                 links.new(tex.outputs["Color"], normal.inputs["Color"])
                 link_to_input(links, normal.outputs["Normal"], normal_input)
                 if debug is not None:
-                    debug.append(f"[summary-pass] {material.name}: linked normal {normal_path.name}")
+                    debug.append(
+                        f"[summary-pass] {material.name}: linked normal {normal_path.name}"
+                    )
             elif debug is not None:
                 debug.append(
                     f"[summary-pass] {material.name}: failed normal {normal_path.name} "
@@ -2154,16 +2228,22 @@ def apply_auxiliary_textures_to_imported_materials(
         principled = principled_node(tree.nodes)
         if principled is None:
             if debug is not None:
-                debug.append(f"[post-pass] {material.name}: no principled node; nodes={[node.type for node in tree.nodes]}")
+                debug.append(
+                    f"[post-pass] {material.name}: no principled node; nodes={[node.type for node in tree.nodes]}"
+                )
             continue
         base_path = material_base_image_path(material)
         if base_path is None:
             if debug is not None:
                 image_nodes = [
-                    node.image.name if node.type == "TEX_IMAGE" and node.image is not None else node.type
+                    node.image.name
+                    if node.type == "TEX_IMAGE" and node.image is not None
+                    else node.type
                     for node in tree.nodes
                 ]
-                debug.append(f"[post-pass] {material.name}: no base image path; nodes={image_nodes}")
+                debug.append(
+                    f"[post-pass] {material.name}: no base image path; nodes={image_nodes}"
+                )
             continue
         variants = material_variants_from_index(material.name, base_path, by_key)
         keys = material_variant_keys(material.name, base_path)
@@ -2236,11 +2316,17 @@ def character_parameter_node_group():
     if group.get("g4_parameter_schema") == 3:
         return group
 
-    geometry_in = group.interface.new_socket(name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
-    geometry_out = group.interface.new_socket(name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    geometry_in = group.interface.new_socket(
+        name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
+    )
+    geometry_out = group.interface.new_socket(
+        name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
+    )
     sockets = []
     for label, _, default, minimum, maximum in CHARACTER_PARAMETER_SOCKETS:
-        socket = group.interface.new_socket(name=label, in_out="INPUT", socket_type="NodeSocketFloat")
+        socket = group.interface.new_socket(
+            name=label, in_out="INPUT", socket_type="NodeSocketFloat"
+        )
         socket.default_value = default
         socket.min_value = minimum
         socket.max_value = maximum
@@ -2267,7 +2353,9 @@ def character_parameter_node_group():
     ]
     attribute_sockets.extend(
         (label, attribute_name, "FLOAT_COLOR", socket)
-        for (label, attribute_name, _), socket in zip(CHARACTER_MASK_COLOR_SOCKETS, sockets[len(CHARACTER_PARAMETER_SOCKETS):])
+        for (label, attribute_name, _), socket in zip(
+            CHARACTER_MASK_COLOR_SOCKETS, sockets[len(CHARACTER_PARAMETER_SOCKETS) :]
+        )
     )
     for index, (label, attribute_name, data_type, socket) in enumerate(attribute_sockets):
         store = group.nodes.new("GeometryNodeStoreNamedAttribute")
@@ -2345,13 +2433,20 @@ def connect_character_parameter_material(material) -> None:
         node = nodes.get(target_spec[0])
         if node is None:
             continue
-        socket = node.inputs.get(target_spec[1]) if isinstance(target_spec[1], str) else node.inputs[target_spec[1]]
+        socket = (
+            node.inputs.get(target_spec[1])
+            if isinstance(target_spec[1], str)
+            else node.inputs[target_spec[1]]
+        )
         links.new(source, socket)
     for label, attribute_name, _ in CHARACTER_MASK_COLOR_SOCKETS:
         channel = label.split()[1]
         tint = nodes.get(f"G4 Mask {channel} Tint")
         if tint is not None:
-            links.new(character_shader_attribute(material, label, attribute_name, color=True), tint.inputs[2])
+            links.new(
+                character_shader_attribute(material, label, attribute_name, color=True),
+                tint.inputs[2],
+            )
 
 
 def material_uses_character_shader(material) -> bool:
@@ -2371,7 +2466,9 @@ def object_needs_character_parameter_modifier(obj, force_character: bool = False
     return any(material_uses_character_shader(slot.material) for slot in obj.material_slots)
 
 
-def configure_character_parameter_modifiers(imported_names: set[str], force_character: bool = False) -> int:
+def configure_character_parameter_modifiers(
+    imported_names: set[str], force_character: bool = False
+) -> int:
     group = character_parameter_node_group()
     created = 0
     input_sockets = {
@@ -2409,7 +2506,11 @@ def configure_character_parameter_modifiers(imported_names: set[str], force_char
 
 
 def configure_environment_cubemap(summary: dict, debug: list[str] | None = None) -> bool:
-    candidates = [Path(path) for path in summary.get("textures", []) if texture_role(Path(path)) == "environment"]
+    candidates = [
+        Path(path)
+        for path in summary.get("textures", [])
+        if texture_role(Path(path)) == "environment"
+    ]
     if not candidates:
         return False
     path = next((item for item in candidates if "global" in item.stem.lower()), candidates[0])
@@ -2488,8 +2589,12 @@ def mark_level5_internal_edges(obj) -> int:
 
     bounds = [obj.matrix_world @ vertex.co for vertex in mesh.vertices]
     if bounds:
-        min_bound = Vector((min(co.x for co in bounds), min(co.y for co in bounds), min(co.z for co in bounds)))
-        max_bound = Vector((max(co.x for co in bounds), max(co.y for co in bounds), max(co.z for co in bounds)))
+        min_bound = Vector(
+            (min(co.x for co in bounds), min(co.y for co in bounds), min(co.z for co in bounds))
+        )
+        max_bound = Vector(
+            (max(co.x for co in bounds), max(co.y for co in bounds), max(co.z for co in bounds))
+        )
         diagonal = (max_bound - min_bound).length
     else:
         diagonal = 1.0
@@ -2517,7 +2622,9 @@ def mark_level5_internal_edges(obj) -> int:
     for edge in mesh.edges:
         polygons = polygons_by_edge.get(tuple(sorted(edge.key)), ())
         if len(polygons) == 1:
-            duplicated_boundaries.setdefault(duplicate_edge_key(edge), []).append((edge, polygons[0]))
+            duplicated_boundaries.setdefault(duplicate_edge_key(edge), []).append(
+                (edge, polygons[0])
+            )
 
     authored_duplicate_edges: set[int] = set()
     for boundary_edges in duplicated_boundaries.values():
@@ -2528,7 +2635,7 @@ def mark_level5_internal_edges(obj) -> int:
         has_normal_split = any(
             first_polygon.normal.angle(second_polygon.normal) >= math.radians(12.0)
             for index, (_first_edge, first_polygon) in enumerate(boundary_edges)
-            for _second_edge, second_polygon in boundary_edges[index + 1:]
+            for _second_edge, second_polygon in boundary_edges[index + 1 :]
         )
         if not (has_material_seam or has_normal_split or detail_name_hint):
             continue
@@ -2573,7 +2680,9 @@ def configure_level5_outlines(
     view_layer = bpy.context.view_layer
     try:
         scene.render.use_freestyle = True
-        outline_thickness = max(0.25, float(getattr(addon_preferences(), "outline_thickness", 1.65)))
+        outline_thickness = max(
+            0.25, float(getattr(addon_preferences(), "outline_thickness", 1.65))
+        )
         settings = view_layer.freestyle_settings
         for stale in tuple(settings.linesets):
             if stale.linestyle is None or stale.name == "LineSet":
@@ -2599,7 +2708,9 @@ def configure_level5_outlines(
         if detail_collection is None:
             detail_collection = bpy.data.collections.new("Level-5 G4 Internal Detail Sources")
             scene.collection.children.link(detail_collection)
-        excluded = re.compile(r"(?:^|_)(?:eye|mouth|teeth|tongue|pupil|eyelash)(?:_|$)", re.IGNORECASE)
+        excluded = re.compile(
+            r"(?:^|_)(?:eye|mouth|teeth|tongue|pupil|eyelash)(?:_|$)", re.IGNORECASE
+        )
         marked_edges = 0
         for name in imported_names:
             obj = bpy.data.objects.get(name)
@@ -2694,7 +2805,11 @@ def configure_level5_outlines(
             debug.append("[outline] Freestyle is unavailable for the active render configuration")
         return False
     if debug is not None:
-        mode = "filtered silhouette with viewport depth/normal detail" if detailed else "filtered silhouette"
+        mode = (
+            "filtered silhouette with viewport depth/normal detail"
+            if detailed
+            else "filtered silhouette"
+        )
         debug.append(f"[outline] render lines use {mode}; marked internal edges={marked_edges}")
     return True
 
@@ -2719,7 +2834,8 @@ def refresh_existing_level5_outlines(mode: str | None = None) -> bool:
         if mode == "OFF":
             return False
         names = {
-            obj.name for obj in bpy.data.objects
+            obj.name
+            for obj in bpy.data.objects
             if obj.type == "MESH" and obj.get("g4_viewport_outline") == "SCREEN_SPACE"
         }
         return bool(names) and configure_level5_outlines(names, detailed=mode == "HULL")
@@ -2783,7 +2899,9 @@ def configure_viewport_outlines(
     return configured
 
 
-def preserve_outline_vertex_parameters(imported_names: set[str], debug: list[str] | None = None) -> int:
+def preserve_outline_vertex_parameters(
+    imported_names: set[str], debug: list[str] | None = None
+) -> int:
     preserved = 0
     for name in imported_names:
         obj = bpy.data.objects.get(name)
@@ -2819,7 +2937,9 @@ def pack_images(paths_before: set[str], texture_paths: set[str], enabled: bool) 
 def cleanup_generated_files(summary: dict, enabled: bool) -> None:
     if not enabled:
         return
-    generated = [Path(value) for key in ("dae", "native_mesh", "report") if (value := summary.get(key))]
+    generated = [
+        Path(value) for key in ("dae", "native_mesh", "report") if (value := summary.get(key))
+    ]
     for file_path in generated:
         if file_path.is_file():
             file_path.unlink()
@@ -2834,7 +2954,11 @@ def discard_secondary_lods(imported_names: set[str]) -> int:
     removed = 0
     for object_name in tuple(imported_names):
         obj = bpy.data.objects.get(object_name)
-        if obj is None or obj.type != "MESH" or not re.search(r"_LOD[1-9](?:\.\d+)?$", obj.name, re.IGNORECASE):
+        if (
+            obj is None
+            or obj.type != "MESH"
+            or not re.search(r"_LOD[1-9](?:\.\d+)?$", obj.name, re.IGNORECASE)
+        ):
             continue
         imported_names.discard(object_name)
         bpy.data.objects.remove(obj, do_unlink=True)
@@ -2863,7 +2987,9 @@ def import_g4_model(
     debug.append(f"[exporter] resolved={summary.get('resolved_model')}")
     debug.append(f"[exporter] native_mesh={summary.get('native_mesh')}")
     debug.append(f"[exporter] skeleton_source={summary.get('skeleton_source')}")
-    debug.append(f"[exporter] textures={len(summary.get('textures', []))} materials={len(summary.get('materials', {}))}")
+    debug.append(
+        f"[exporter] textures={len(summary.get('textures', []))} materials={len(summary.get('materials', {}))}"
+    )
     debug.append(f"[exporter] texture_sources={summary.get('texture_sources', [])}")
     native_value = summary.get("native_mesh")
     native_path = Path(native_value).resolve() if native_value else None
@@ -2874,7 +3000,9 @@ def import_g4_model(
         dae_path = Path(summary.get("dae", "")).resolve()
         collada_import = getattr(bpy.ops.wm, "collada_import", None)
         if not dae_path.exists() or collada_import is None:
-            raise RuntimeError("Native G4 mesh payload was not generated and Collada fallback is unavailable")
+            raise RuntimeError(
+                "Native G4 mesh payload was not generated and Collada fallback is unavailable"
+            )
         imported_names = import_collada(dae_path)
         import_method = "collada_fallback"
     preserve_outline_vertex_parameters(imported_names, debug)
@@ -2899,7 +3027,9 @@ def import_g4_model(
         apply_styling=apply_styling,
     )
     if apply_styling:
-        modifier_count = configure_character_parameter_modifiers(imported_names, force_character=is_character_model(path))
+        modifier_count = configure_character_parameter_modifiers(
+            imported_names, force_character=is_character_model(path)
+        )
         debug.append(f"[character-controls] geometry-node modifiers={modifier_count}")
     if apply_styling:
         configure_character_color_management(debug)
@@ -2996,12 +3126,12 @@ def model_lookup_candidates(path: Path, prefs: G4ImporterPreferences) -> list[st
     parts = path.parts
     for index in range(len(parts) - 1):
         if parts[index] in {"common", "dx11", "nx"}:
-            add(Path(*parts[index + 1:]))
-        if parts[index:index + 2] == ("common", "chr"):
-            add(Path(*parts[index + 2:]))
-        if parts[index:index + 2] == ("common", "chr_face"):
-            add(Path("chr_face", *parts[index + 2:]))
-            add(Path("_face", *parts[index + 2:]))
+            add(Path(*parts[index + 1 :]))
+        if parts[index : index + 2] == ("common", "chr"):
+            add(Path(*parts[index + 2 :]))
+        if parts[index : index + 2] == ("common", "chr_face"):
+            add(Path("chr_face", *parts[index + 2 :]))
+            add(Path("_face", *parts[index + 2 :]))
     add(Path(path.name))
 
     unique: list[str] = []
@@ -3013,7 +3143,9 @@ def model_lookup_candidates(path: Path, prefs: G4ImporterPreferences) -> list[st
     return unique
 
 
-def lookup_model_row(path: Path, prefs: G4ImporterPreferences, models: dict | None = None) -> dict | None:
+def lookup_model_row(
+    path: Path, prefs: G4ImporterPreferences, models: dict | None = None
+) -> dict | None:
     models = load_model_lookup(prefs) if models is None else models
     for candidate in model_lookup_candidates(path, prefs):
         row = models.get(candidate)
@@ -3031,14 +3163,14 @@ def body_stem_from_row(row: dict | None) -> str | None:
 def lookup_body_stem_for_identifier(identifier: str, models: dict) -> str | None:
     identifier = identifier.lower()
     rows = (
-        row
-        for model_path, row in models.items()
-        if Path(model_path).stem.lower() == identifier
+        row for model_path, row in models.items() if Path(model_path).stem.lower() == identifier
     )
     return next((stem for row in rows if (stem := body_stem_from_row(row))), None)
 
 
-def lookup_body_stem(path: Path, prefs: G4ImporterPreferences, models: dict | None = None) -> str | None:
+def lookup_body_stem(
+    path: Path, prefs: G4ImporterPreferences, models: dict | None = None
+) -> str | None:
     models = load_model_lookup(prefs) if models is None else models
     return body_stem_from_row(lookup_model_row(path, prefs, models))
 
@@ -3129,7 +3261,9 @@ def body_mesh_profile_from_chara_model(path: Path, prefs: G4ImporterPreferences)
     return profiles.get(body_id)
 
 
-def declared_body_variant_for_character(body_path: Path, model_path: Path, prefs: G4ImporterPreferences) -> Path:
+def declared_body_variant_for_character(
+    body_path: Path, model_path: Path, prefs: G4ImporterPreferences
+) -> Path:
     """Select the CFG-declared body-profile variant of a modular uniform.
 
     G4 clothing families store compatible meshes side by side (for example
@@ -3139,14 +3273,20 @@ def declared_body_variant_for_character(body_path: Path, model_path: Path, prefs
     but its vertices are authored for different rest-bone positions.
     """
     profile = body_profile_from_chara_model(model_path, prefs)
-    if profile is None or not re.fullmatch(r"(?:u|s|sk|g|m|n)\d{6,8}", body_path.stem, re.IGNORECASE):
+    if profile is None or not re.fullmatch(
+        r"(?:u|s|sk|g|m|n)\d{6,8}", body_path.stem, re.IGNORECASE
+    ):
         return body_path
     for data_root in model_data_roots(body_path, prefs):
         try:
-            relative = body_path.resolve().relative_to(data_root / "common" / "chr").as_posix().lower()
+            relative = (
+                body_path.resolve().relative_to(data_root / "common" / "chr").as_posix().lower()
+            )
         except ValueError:
             continue
-        config_paths = sorted((data_root / "common" / "gamedata" / "character").glob("chara_parts*.cfg.bin.xml"))
+        config_paths = sorted(
+            (data_root / "common" / "gamedata" / "character").glob("chara_parts*.cfg.bin.xml")
+        )
         for config_path in config_paths:
             variants = CHARACTER_PART_BODY_VARIANT_CACHE.get(config_path)
             if variants is None:
@@ -3163,13 +3303,15 @@ def declared_body_variant_for_character(body_path: Path, model_path: Path, prefs
                     strings = {
                         int(index): value.replace("\\", "/").lower()
                         for index, value in re.findall(
-                            r'<value index="(\d+)" type="String">([^<]+\.g4md)</value>', entry.group(1)
+                            r'<value index="(\d+)" type="String">([^<]+\.g4md)</value>',
+                            entry.group(1),
                         )
                     }
                     integers = {
                         int(index): value
                         for index, value in re.findall(
-                            r'<value index="(\d+)" type="(?:Integer|Unsigned Integer)">([^<]+)</value>', entry.group(1)
+                            r'<value index="(\d+)" type="(?:Integer|Unsigned Integer)">([^<]+)</value>',
+                            entry.group(1),
                         )
                     }
                     try:
@@ -3180,7 +3322,9 @@ def declared_body_variant_for_character(body_path: Path, model_path: Path, prefs
                         if not candidate.startswith("_uniform/") or not candidate.endswith(".g4md"):
                             continue
                         candidate_path = Path(candidate)
-                        if not re.fullmatch(r"(?:u|s|sk|g|m|n)\d{6,8}", candidate_path.stem, re.IGNORECASE):
+                        if not re.fullmatch(
+                            r"(?:u|s|sk|g|m|n)\d{6,8}", candidate_path.stem, re.IGNORECASE
+                        ):
                             continue
                         key = (candidate_path.parent.as_posix(), candidate_path.stem[:-2].lower())
                         profile_variants = variants.setdefault(key, {})
@@ -3254,7 +3398,9 @@ def attach_part_to_armature(
     )
     imported_objects = [bpy.data.objects.get(name) for name in imported_names]
     imported_objects = [obj for obj in imported_objects if obj is not None]
-    part_armatures = {obj for obj in imported_objects if obj.type == "ARMATURE" and obj != target_armature}
+    part_armatures = {
+        obj for obj in imported_objects if obj.type == "ARMATURE" and obj != target_armature
+    }
 
     attached = 0
     for obj in imported_objects:
@@ -3287,10 +3433,14 @@ def attach_part_to_armature(
 def declared_accessory_part_for_body(body_path: Path, prefs: G4ImporterPreferences) -> Path | None:
     for data_root in model_data_roots(body_path, prefs):
         try:
-            relative = body_path.resolve().relative_to(data_root / "common" / "chr").as_posix().lower()
+            relative = (
+                body_path.resolve().relative_to(data_root / "common" / "chr").as_posix().lower()
+            )
         except ValueError:
             continue
-        config_paths = sorted((data_root / "common" / "gamedata" / "character").glob("chara_parts*.cfg.bin.xml"))
+        config_paths = sorted(
+            (data_root / "common" / "gamedata" / "character").glob("chara_parts*.cfg.bin.xml")
+        )
         for config_path in config_paths:
             lookup = CHARACTER_PART_ACCESSORY_CACHE.get(config_path)
             if lookup is None:
@@ -3307,10 +3457,13 @@ def declared_accessory_part_for_body(body_path: Path, prefs: G4ImporterPreferenc
                     values = {
                         int(index): value.replace("\\", "/").lower()
                         for index, value in re.findall(
-                            r'<value index="(\d+)" type="String">([^<]+\.g4md)</value>', entry.group(1)
+                            r'<value index="(\d+)" type="String">([^<]+\.g4md)</value>',
+                            entry.group(1),
                         )
                     }
-                    if values.get(0, "").startswith("_uniform/") and values.get(6, "").startswith("_uniform/"):
+                    if values.get(0, "").startswith("_uniform/") and values.get(6, "").startswith(
+                        "_uniform/"
+                    ):
                         lookup.setdefault(values[0], values[6])
                 CHARACTER_PART_ACCESSORY_CACHE[config_path] = lookup
             declared = lookup.get(relative)
@@ -3354,7 +3507,11 @@ def attach_ball_to_armature(
     create_report_text: bool,
 ) -> int:
     ball_bone = next(
-        (name for name in ("ball", "c_ball_1_0") if target_armature.pose.bones.get(name) is not None),
+        (
+            name
+            for name in ("ball", "c_ball_1_0")
+            if target_armature.pose.bones.get(name) is not None
+        ),
         None,
     )
     if ball_bone is None:
@@ -3401,13 +3558,21 @@ def import_character_parts_for_armature(
     character_part_stem: str = "",
     preserve_part_armatures: bool = False,
 ) -> tuple[int, list[Path]]:
-    body = Path(bpy.path.abspath(body_path)) if body_path else (
-        find_character_part(model_path, "u", prefs, character_part_stem) if automatic else None
+    body = (
+        Path(bpy.path.abspath(body_path))
+        if body_path
+        else (
+            find_character_part(model_path, "u", prefs, character_part_stem) if automatic else None
+        )
     )
     if body is not None:
         body = declared_body_variant_for_character(body, model_path, prefs)
-    shoes = Path(bpy.path.abspath(shoes_path)) if shoes_path else (
-        find_character_part(model_path, "s", prefs, character_part_stem) if automatic else None
+    shoes = (
+        Path(bpy.path.abspath(shoes_path))
+        if shoes_path
+        else (
+            find_character_part(model_path, "s", prefs, character_part_stem) if automatic else None
+        )
     )
     accessory = Path(bpy.path.abspath(accessory_path)) if accessory_path else None
     if accessory is None and automatic and body is not None:
@@ -3416,9 +3581,16 @@ def import_character_parts_for_armature(
         body,
         shoes,
         accessory,
-        *(Path(bpy.path.abspath(value)) for value in (gloves_path, armband_path, nameplate_path) if value),
+        *(
+            Path(bpy.path.abspath(value))
+            for value in (gloves_path, armband_path, nameplate_path)
+            if value
+        ),
     ]
-    paths = [declared_body_variant_for_character(path, model_path, prefs) if path is not None else None for path in paths]
+    paths = [
+        declared_body_variant_for_character(path, model_path, prefs) if path is not None else None
+        for path in paths
+    ]
     selected = []
     for path in paths:
         if path is None:
@@ -3495,7 +3667,9 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
     event_import_effects: BoolProperty(default=False, options={"HIDDEN", "SKIP_SAVE"})
     allow_head_override: BoolProperty(default=False, options={"HIDDEN", "SKIP_SAVE"})
     create_report_text: BoolProperty(default=True, options={"HIDDEN", "SKIP_SAVE"})
-    head_model: StringProperty(name="Head", subtype="FILE_PATH", update=character_setup_head_changed)
+    head_model: StringProperty(
+        name="Head", subtype="FILE_PATH", update=character_setup_head_changed
+    )
     body_model: StringProperty(name="Body", subtype="FILE_PATH")
     shoes_model: StringProperty(name="Shoes", subtype="FILE_PATH")
     accessory_model: StringProperty(name="Arms/Neck", subtype="FILE_PATH")
@@ -3539,7 +3713,9 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
             autofill_character_setup_parts(self)
             defaults = g4_animation_addon.event_part_defaults(directory, actor, prefs)
             for key, value in defaults.items():
-                if not selected.get(key) or key in g4_animation_addon.EVENT_PART_OVERRIDES.get(directory.name, {}).get(actor, {}):
+                if not selected.get(key) or key in g4_animation_addon.EVENT_PART_OVERRIDES.get(
+                    directory.name, {}
+                ).get(actor, {}):
                     selected[key] = value
             self.body_model = selected.get("body") or self.body_model
             self.shoes_model = selected.get("shoes") or self.shoes_model
@@ -3560,7 +3736,9 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
         autofill_character_setup_parts(self)
         for key in (
             "gloves_model",
-            "armband_model", "nameplate_model", "ball_model",
+            "armband_model",
+            "nameplate_model",
+            "ball_model",
         ):
             if not getattr(self, key):
                 setattr(self, key, str(saved.get(key) or ""))
@@ -3571,7 +3749,11 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
         layout = self.layout
         if self.event_directory:
             actors = json.loads(self.event_actors_json or "[]")
-            actor = actors[self.event_actor_index] if self.event_actor_index < len(actors) else "<unknown>"
+            actor = (
+                actors[self.event_actor_index]
+                if self.event_actor_index < len(actors)
+                else "<unknown>"
+            )
             layout.label(text=f"Event actor: {actor}", icon="ARMATURE_DATA")
         else:
             layout.label(text=f"Rig: {Path(self.model_path).name}", icon="ARMATURE_DATA")
@@ -3601,8 +3783,13 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
         values = {
             key: bpy.path.abspath(getattr(self, key)) if getattr(self, key) else ""
             for key in (
-                "body_model", "shoes_model", "accessory_model", "gloves_model",
-                "armband_model", "nameplate_model", "ball_model",
+                "body_model",
+                "shoes_model",
+                "accessory_model",
+                "gloves_model",
+                "armband_model",
+                "nameplate_model",
+                "ball_model",
             )
         }
         values["attach_ball"] = self.attach_ball
@@ -3638,14 +3825,16 @@ class IMPORT_OT_level5_g4_character_setup(Operator):
                     f"character setup advancing: next_actor={actors[next_index]}; index={next_index}"
                 )
                 g4_animation_addon.defer_blender_call(
-                    lambda import_effects=import_effects: bpy.ops.import_scene.level5_g4_character_setup(
-                        "INVOKE_DEFAULT",
-                        model_path=str(next_model) if next_model is not None else "",
-                        event_directory=str(directory),
-                        event_actors_json=json.dumps(actors),
-                        event_selected_json=json.dumps(selected),
-                        event_actor_index=next_index,
-                        event_import_effects=import_effects,
+                    lambda import_effects=import_effects: (
+                        bpy.ops.import_scene.level5_g4_character_setup(
+                            "INVOKE_DEFAULT",
+                            model_path=str(next_model) if next_model is not None else "",
+                            event_directory=str(directory),
+                            event_actors_json=json.dumps(actors),
+                            event_selected_json=json.dumps(selected),
+                            event_actor_index=next_index,
+                            event_import_effects=import_effects,
+                        )
                     ),
                     label="Open next event character setup",
                 )
@@ -3748,9 +3937,15 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
         name="Arms / Neck",
         description="Optional sk*.g4md/.g4pkm part; matching sk* is attached automatically for a selected u* body",
     )
-    gloves_model: StringProperty(name="Gloves Model", description="Optional g*.g4md/.g4pkm gloves part")
-    armband_model: StringProperty(name="Captain Armband Model", description="Optional m*.g4md/.g4pkm armband part")
-    nameplate_model: StringProperty(name="Nameplate Model", description="Optional n*.g4md/.g4pkm nameplate part")
+    gloves_model: StringProperty(
+        name="Gloves Model", description="Optional g*.g4md/.g4pkm gloves part"
+    )
+    armband_model: StringProperty(
+        name="Captain Armband Model", description="Optional m*.g4md/.g4pkm armband part"
+    )
+    nameplate_model: StringProperty(
+        name="Nameplate Model", description="Optional n*.g4md/.g4pkm nameplate part"
+    )
     attach_ball: BoolProperty(name="Attach Ball", default=False)
     ball_model: StringProperty(name="Ball Model", description="Optional b000001.g4pkm override")
     character_part_stem: StringProperty(
@@ -3760,6 +3955,7 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
         default=False,
         options={"HIDDEN", "SKIP_SAVE"},
     )
+
     def invoke(self, context, event):
         self.auto_character_parts = False
         self.character_setup_complete = False
@@ -3773,7 +3969,11 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
         base_path = Path(self.filepath)
         if self.files:
             directory = Path(getattr(self, "directory", "") or base_path.parent)
-            paths = [directory / item.name for item in self.files if Path(item.name).suffix.lower() in MODEL_EXTENSIONS]
+            paths = [
+                directory / item.name
+                for item in self.files
+                if Path(item.name).suffix.lower() in MODEL_EXTENSIONS
+            ]
         else:
             paths = [base_path]
 
@@ -3785,7 +3985,9 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
 
         unsupported = [path for path in paths if path.suffix.lower() not in MODEL_EXTENSIONS]
         if unsupported:
-            g4_animation_addon.append_event_file_log(f"model batch cancelled: unsupported={unsupported}")
+            g4_animation_addon.append_event_file_log(
+                f"model batch cancelled: unsupported={unsupported}"
+            )
             suffixes = ", ".join(sorted({path.suffix or "<none>" for path in unsupported}))
             self.report({"ERROR"}, f"Unsupported G4 model extension: {suffixes}")
             return {"CANCELLED"}
@@ -3845,7 +4047,11 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
                     summaries.append(summary)
                     imported_total += len(imported_names)
                     armatures = imported_armatures(imported_names)
-                    if self.import_character_parts and armatures and re.fullmatch(r"c\d{6,8}", path.stem, re.IGNORECASE):
+                    if (
+                        self.import_character_parts
+                        and armatures
+                        and re.fullmatch(r"c\d{6,8}", path.stem, re.IGNORECASE)
+                    ):
                         attached, part_paths = import_character_parts_for_armature(
                             path,
                             armatures[0],
@@ -3864,10 +4070,16 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
                         part_mesh_total += attached
                         imported_parts.extend(part_paths)
                         if self.attach_ball:
-                            ball_path = Path(bpy.path.abspath(self.ball_model)) if self.ball_model else find_default_ball_model(path, prefs)
+                            ball_path = (
+                                Path(bpy.path.abspath(self.ball_model))
+                                if self.ball_model
+                                else find_default_ball_model(path, prefs)
+                            )
                             if ball_path is None:
                                 raise RuntimeError("Default ball model b000001 was not found")
-                            part_mesh_total += attach_ball_to_armature(ball_path, armatures[0], prefs, self.create_report_text)
+                            part_mesh_total += attach_ball_to_armature(
+                                ball_path, armatures[0], prefs, self.create_report_text
+                            )
                     update_import_progress(
                         context,
                         index,
@@ -3912,15 +4124,15 @@ class IMPORT_OT_level5_g4(Operator, ImportHelper):
 def collect_model_paths(directory: Path, recursive: bool) -> list[Path]:
     iterator = directory.rglob("*") if recursive else directory.iterdir()
     candidates = sorted(
-        path
-        for path in iterator
-        if path.is_file() and path.suffix.lower() in MODEL_EXTENSIONS
+        path for path in iterator if path.is_file() and path.suffix.lower() in MODEL_EXTENSIONS
     )
     by_folder_stem: dict[tuple[Path, str], Path] = {}
     for path in candidates:
         key = (path.parent, path.stem)
         previous = by_folder_stem.get(key)
-        if previous is None or (previous.suffix.lower() == ".g4md" and path.suffix.lower() == ".g4pkm"):
+        if previous is None or (
+            previous.suffix.lower() == ".g4md" and path.suffix.lower() == ".g4pkm"
+        ):
             by_folder_stem[key] = path
     return sorted(by_folder_stem.values(), key=lambda item: item.as_posix())
 
@@ -3961,7 +4173,9 @@ def collect_map_model_path_index(map_root: Path) -> dict[str, Path]:
     return by_stem
 
 
-def append_referenced_map_paths(directory: Path, paths: list[Path]) -> tuple[list[Path], dict[str, list[dict]], list[Path]]:
+def append_referenced_map_paths(
+    directory: Path, paths: list[Path]
+) -> tuple[list[Path], dict[str, list[dict]], list[Path]]:
     map_root = map_root_from_directory(directory)
     if map_root is None:
         stems = {path.stem.lower() for path in paths}
@@ -4003,7 +4217,10 @@ def auto_hide_map_parts(imported_names: set[str]) -> int:
         lowered = obj.name.lower()
         auxiliary = any(token in lowered for token in ("sdw", "shadow", "culling"))
         if not auxiliary and re.search(r"(?:^|_)lv[12](?:_|$)", lowered):
-            auxiliary = any(token in lowered for token in ("lod", "range", "model_sdw", "shadow", "culling", "sdw"))
+            auxiliary = any(
+                token in lowered
+                for token in ("lod", "range", "model_sdw", "shadow", "culling", "sdw")
+            )
         if not auxiliary:
             continue
         obj.hide_viewport = True
@@ -4056,7 +4273,9 @@ def apply_map_placements(
     source_objects = [obj for obj in source_objects if obj is not None]
     placed = 0
     for placement_index, placement in enumerate(placements):
-        objects = source_objects if placement_index == 0 else duplicate_imported_objects(source_objects)
+        objects = (
+            source_objects if placement_index == 0 else duplicate_imported_objects(source_objects)
+        )
         object_set = set(objects)
         matrix = placement_matrix(placement["matrix"])
         for obj in objects:
@@ -4138,13 +4357,17 @@ class IMPORT_OT_level5_g4_folder(Operator):
             f"character_parts={self.import_character_parts}"
         )
         if not directory.exists() or not directory.is_dir():
-            g4_animation_addon.append_event_file_log("model folder batch cancelled: directory does not exist")
+            g4_animation_addon.append_event_file_log(
+                "model folder batch cancelled: directory does not exist"
+            )
             self.report({"ERROR"}, f"Folder not found: {directory}")
             return {"CANCELLED"}
 
         paths = collect_model_paths_auto(directory, self.recursive)
         if not paths:
-            g4_animation_addon.append_event_file_log("model folder batch cancelled: no models found")
+            g4_animation_addon.append_event_file_log(
+                "model folder batch cancelled: no models found"
+            )
             self.report({"ERROR"}, f"No .g4md/.g4pkm models found in {directory}")
             return {"CANCELLED"}
 
@@ -4186,7 +4409,11 @@ class IMPORT_OT_level5_g4_folder(Operator):
                         placements_by_asset.get(path.stem.lower(), []),
                     )
                     armatures = imported_armatures(imported_names)
-                    if self.import_character_parts and armatures and re.fullmatch(r"c\d{6,8}", path.stem, re.IGNORECASE):
+                    if (
+                        self.import_character_parts
+                        and armatures
+                        and re.fullmatch(r"c\d{6,8}", path.stem, re.IGNORECASE)
+                    ):
                         attached, _ = import_character_parts_for_armature(
                             path,
                             armatures[0],
@@ -4203,10 +4430,16 @@ class IMPORT_OT_level5_g4_folder(Operator):
                         )
                         imported_total += attached
                         if self.attach_ball:
-                            ball_path = Path(bpy.path.abspath(self.ball_model)) if self.ball_model else find_default_ball_model(path, prefs)
+                            ball_path = (
+                                Path(bpy.path.abspath(self.ball_model))
+                                if self.ball_model
+                                else find_default_ball_model(path, prefs)
+                            )
                             if ball_path is None:
                                 raise RuntimeError("Default ball model b000001 was not found")
-                            imported_total += attach_ball_to_armature(ball_path, armatures[0], prefs, self.create_report_text)
+                            imported_total += attach_ball_to_armature(
+                                ball_path, armatures[0], prefs, self.create_report_text
+                            )
                     update_import_progress(
                         context,
                         index,
@@ -4283,26 +4516,43 @@ class IMPORT_OT_level5_g4_character_parts(Operator):
             path
             for path in (
                 body_model,
-                *(Path(bpy.path.abspath(value)) for value in (
-                    self.shoes_model, self.accessory_model,
-                    self.gloves_model, self.armband_model, self.nameplate_model,
-                ) if value),
+                *(
+                    Path(bpy.path.abspath(value))
+                    for value in (
+                        self.shoes_model,
+                        self.accessory_model,
+                        self.gloves_model,
+                        self.armband_model,
+                        self.nameplate_model,
+                    )
+                    if value
+                ),
             )
             if path is not None
         ]
         if model_source.is_file():
-            paths = [declared_body_variant_for_character(path, model_source, prefs) for path in paths]
+            paths = [
+                declared_body_variant_for_character(path, model_source, prefs) for path in paths
+            ]
         if not paths and not self.attach_ball:
             self.report({"WARNING"}, "No character part selected")
             return {"CANCELLED"}
-        invalid = [path for path in paths if not path.is_file() or path.suffix.lower() not in MODEL_EXTENSIONS]
+        invalid = [
+            path
+            for path in paths
+            if not path.is_file() or path.suffix.lower() not in MODEL_EXTENSIONS
+        ]
         if invalid:
             self.report({"ERROR"}, f"Character part not found or unsupported: {invalid[0]}")
             return {"CANCELLED"}
         try:
             attached = sum(attach_part_to_armature(path, target, prefs, False) for path in paths)
             if self.attach_ball:
-                ball_path = Path(bpy.path.abspath(self.ball_model)) if self.ball_model else find_default_ball_model(Path(), prefs)
+                ball_path = (
+                    Path(bpy.path.abspath(self.ball_model))
+                    if self.ball_model
+                    else find_default_ball_model(Path(), prefs)
+                )
                 if ball_path is None:
                     raise RuntimeError("Default ball model b000001 was not found")
                 attached += attach_ball_to_armature(ball_path, target, prefs, False)
@@ -4326,9 +4576,15 @@ class OBJECT_OT_level5_mask_recolor(bpy.types.Operator):
     bl_description = "Choose the colors applied to the red, green and blue mask channels"
     bl_options = {"REGISTER", "UNDO"}
 
-    red_color: FloatVectorProperty(name="Red Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0))
-    green_color: FloatVectorProperty(name="Green Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0))
-    blue_color: FloatVectorProperty(name="Blue Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0))
+    red_color: FloatVectorProperty(
+        name="Red Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0)
+    )
+    green_color: FloatVectorProperty(
+        name="Green Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0)
+    )
+    blue_color: FloatVectorProperty(
+        name="Blue Mask", subtype="COLOR", size=4, min=0.0, max=1.0, default=(1.0, 1.0, 1.0, 1.0)
+    )
 
     @staticmethod
     def socket(modifier, label):
@@ -4378,7 +4634,9 @@ class OBJECT_OT_level5_mask_recolor(bpy.types.Operator):
         for label, attribute_name, _ in CHARACTER_MASK_COLOR_SOCKETS:
             socket = self.socket(modifier, label)
             if socket is not None:
-                set_modifier_input_value(modifier, socket.identifier, getattr(self, self.color_property(attribute_name)))
+                set_modifier_input_value(
+                    modifier, socket.identifier, getattr(self, self.color_property(attribute_name))
+                )
         return {"FINISHED"}
 
 
@@ -4441,7 +4699,9 @@ def assign_character_material_textures(material, texture_paths: list[Path]) -> i
         return 0
     base_text = str(material.get("g4_base_texture", "") or "")
     base_path = Path(base_text) if base_text else None
-    variants = material_variants_from_index(material.name, base_path, build_texture_index(texture_paths))
+    variants = material_variants_from_index(
+        material.name, base_path, build_texture_index(texture_paths)
+    )
     assigned = 0
     for _label, node_name, role in CHARACTER_TEXTURE_NODE_SLOTS:
         path = variants.get(role)
@@ -4454,11 +4714,15 @@ def assign_character_material_textures(material, texture_paths: list[Path]) -> i
     return assigned
 
 
-def extract_character_textures_from_g4tx(g4tx_path: Path, output_root: Path | None = None) -> list[Path]:
+def extract_character_textures_from_g4tx(
+    g4tx_path: Path, output_root: Path | None = None
+) -> list[Path]:
     path = Path(g4tx_path)
     if output_root is None:
         prefs = addon_preferences()
-        output_root = Path(bpy.path.abspath(getattr(prefs, "export_dir", "") or default_export_dir()))
+        output_root = Path(
+            bpy.path.abspath(getattr(prefs, "export_dir", "") or default_export_dir())
+        )
     written = extract_g4tx(path, output_root / "modifier_g4tx" / path.stem)
     for texture_path in written:
         image = load_image(texture_path)
@@ -4467,7 +4731,9 @@ def extract_character_textures_from_g4tx(g4tx_path: Path, output_root: Path | No
     return written
 
 
-def assign_character_textures_from_g4tx(obj, g4tx_path: Path, output_root: Path | None = None) -> int:
+def assign_character_textures_from_g4tx(
+    obj, g4tx_path: Path, output_root: Path | None = None
+) -> int:
     if obj is None or obj.type != "MESH":
         return 0
     written = extract_character_textures_from_g4tx(g4tx_path, output_root)
@@ -4504,7 +4770,9 @@ class OBJECT_OT_level5_load_character_g4tx(bpy.types.Operator, ImportHelper):
             self.report({"ERROR"}, f"Failed to load G4TX: {exc}")
             return {"CANCELLED"}
         if assigned <= 0:
-            self.report({"INFO"}, f"Loaded {len(written)} textures from {path.name}; assign them manually")
+            self.report(
+                {"INFO"}, f"Loaded {len(written)} textures from {path.name}; assign them manually"
+            )
             return {"FINISHED"}
         self.report({"INFO"}, f"Assigned {assigned} Character texture slots from {path.name}")
         return {"FINISHED"}
@@ -4556,7 +4824,11 @@ class MATERIAL_PT_level5_character(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         material = context.material
-        return material is not None and bool(material.get("g4_level5_toon")) and material.node_tree is not None
+        return (
+            material is not None
+            and bool(material.get("g4_level5_toon"))
+            and material.node_tree is not None
+        )
 
     def draw(self, context):
         layout = self.layout
@@ -4628,6 +4900,7 @@ classes = [
 
 
 if hasattr(bpy.types, "FileHandler"):
+
     class G4_FH_import(bpy.types.FileHandler):
         bl_idname = "G4_FH_import"
         bl_label = "Level-5 G4 Model"
@@ -4636,7 +4909,11 @@ if hasattr(bpy.types, "FileHandler"):
 
         @classmethod
         def poll_drop(cls, context):
-            return context.area is not None and context.area.type in {"VIEW_3D", "OUTLINER", "FILE_BROWSER"}
+            return context.area is not None and context.area.type in {
+                "VIEW_3D",
+                "OUTLINER",
+                "FILE_BROWSER",
+            }
 
     classes.append(G4_FH_import)
 

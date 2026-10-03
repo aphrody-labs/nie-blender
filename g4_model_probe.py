@@ -28,9 +28,9 @@ def default_chara_model_xml() -> Path:
     if env_path:
         candidates.append(Path(env_path).expanduser())
 
-    candidates.extend(sorted(
-        (RAW_DATA_ROOT / "common" / "gamedata" / "character").glob("chara_model*.xml")
-    ))
+    candidates.extend(
+        sorted((RAW_DATA_ROOT / "common" / "gamedata" / "character").glob("chara_model*.xml"))
+    )
 
     script_dir = Path(__file__).resolve().parent
     search_dirs = [script_dir, script_dir / "TOOLS", script_dir.parent / "TOOLS", Path("TOOLS")]
@@ -133,38 +133,108 @@ MODEL_EXTENSIONS = {".g4md", ".g4pkm", ".objbin"}
 # order. Assigned G4SK files may contain the same joints at different indices,
 # so palettes must be translated by name before writing the skin controller.
 ASSIGNED_SKELETON_JOINT_NAMES = (
-    "output", "c_global_0_0", "c_c_1_0", "c_c_1_1",
-    "l_s_1_0", "l_a_1_0", "l_a_1_1", "l_w_1_0", "l_wph_1_0",
-    "l_idx_1_0", "l_idx_1_1", "l_idx_1_2",
-    "l_mid_1_0", "l_mid_1_1", "l_mid_1_2",
-    "l_rng_1_0", "l_rng_1_1", "l_rng_1_2",
-    "l_thb_1_0", "l_thb_1_1", "l_thb_1_2", "l_soh_1_0",
-    "l_pky_1_0", "l_pky_1_1", "l_pky_1_2", "l_fa_1_0",
-    "l_slv2_1_0", "l_slv1_1_0", "c_n_1_0", "c_head_1_0",
-    "c_hir1_1_0", "c_hir2_1_0", "c_hir2_1_1", "c_hir2_1_2",
-    "c_hir3_1_0", "c_hir3_1_1", "c_hir4_1_0",
-    "l_hir1_1_0", "l_hir1_1_1", "l_hir2_1_0", "l_hir2_1_1",
-    "l_hir2_1_2", "l_hir3_1_0", "l_hir3_1_1", "l_hir4_1_0",
-    "r_hir1_1_0", "r_hir1_1_1", "r_hir2_1_0", "r_hir2_1_1",
-    "r_hir2_1_2", "r_hir3_1_0", "r_hir3_1_1", "r_hir4_1_0",
-    "r_s_1_0", "r_a_1_0", "r_a_1_1", "r_w_1_0", "r_wph_1_0",
-    "r_idx_1_0", "r_idx_1_1", "r_idx_1_2",
-    "r_mid_1_0", "r_mid_1_1", "r_mid_1_2",
-    "r_rng_1_0", "r_rng_1_1", "r_rng_1_2",
-    "r_thb_1_0", "r_thb_1_1", "r_thb_1_2", "r_soh_1_0",
-    "r_pky_1_0", "r_pky_1_1", "r_pky_1_2", "r_fa_1_0",
-    "r_slv2_1_0", "r_slv1_1_0",
-    "r_mnt_1_0", "r_mnt_1_1", "l_mnt_1_0", "l_mnt_1_1",
-    "c_mnt_1_0", "c_mnt_1_1",
-    "l_l_1_0", "l_l_1_1", "l_foot_1_0", "l_foot_1_1", "l_pnt_1_0",
-    "r_l_1_0", "r_l_1_1", "r_foot_1_0", "r_foot_1_1", "r_pnt_1_0",
-    "c_sht1_1_0", "c_ball_1_0",
+    "output",
+    "c_global_0_0",
+    "c_c_1_0",
+    "c_c_1_1",
+    "l_s_1_0",
+    "l_a_1_0",
+    "l_a_1_1",
+    "l_w_1_0",
+    "l_wph_1_0",
+    "l_idx_1_0",
+    "l_idx_1_1",
+    "l_idx_1_2",
+    "l_mid_1_0",
+    "l_mid_1_1",
+    "l_mid_1_2",
+    "l_rng_1_0",
+    "l_rng_1_1",
+    "l_rng_1_2",
+    "l_thb_1_0",
+    "l_thb_1_1",
+    "l_thb_1_2",
+    "l_soh_1_0",
+    "l_pky_1_0",
+    "l_pky_1_1",
+    "l_pky_1_2",
+    "l_fa_1_0",
+    "l_slv2_1_0",
+    "l_slv1_1_0",
+    "c_n_1_0",
+    "c_head_1_0",
+    "c_hir1_1_0",
+    "c_hir2_1_0",
+    "c_hir2_1_1",
+    "c_hir2_1_2",
+    "c_hir3_1_0",
+    "c_hir3_1_1",
+    "c_hir4_1_0",
+    "l_hir1_1_0",
+    "l_hir1_1_1",
+    "l_hir2_1_0",
+    "l_hir2_1_1",
+    "l_hir2_1_2",
+    "l_hir3_1_0",
+    "l_hir3_1_1",
+    "l_hir4_1_0",
+    "r_hir1_1_0",
+    "r_hir1_1_1",
+    "r_hir2_1_0",
+    "r_hir2_1_1",
+    "r_hir2_1_2",
+    "r_hir3_1_0",
+    "r_hir3_1_1",
+    "r_hir4_1_0",
+    "r_s_1_0",
+    "r_a_1_0",
+    "r_a_1_1",
+    "r_w_1_0",
+    "r_wph_1_0",
+    "r_idx_1_0",
+    "r_idx_1_1",
+    "r_idx_1_2",
+    "r_mid_1_0",
+    "r_mid_1_1",
+    "r_mid_1_2",
+    "r_rng_1_0",
+    "r_rng_1_1",
+    "r_rng_1_2",
+    "r_thb_1_0",
+    "r_thb_1_1",
+    "r_thb_1_2",
+    "r_soh_1_0",
+    "r_pky_1_0",
+    "r_pky_1_1",
+    "r_pky_1_2",
+    "r_fa_1_0",
+    "r_slv2_1_0",
+    "r_slv1_1_0",
+    "r_mnt_1_0",
+    "r_mnt_1_1",
+    "l_mnt_1_0",
+    "l_mnt_1_1",
+    "c_mnt_1_0",
+    "c_mnt_1_1",
+    "l_l_1_0",
+    "l_l_1_1",
+    "l_foot_1_0",
+    "l_foot_1_1",
+    "l_pnt_1_0",
+    "r_l_1_0",
+    "r_l_1_1",
+    "r_foot_1_0",
+    "r_foot_1_1",
+    "r_pnt_1_0",
+    "c_sht1_1_0",
+    "c_ball_1_0",
 )
 
 # Uniform G4MD palettes omit optional targets from the full character target
 # table.  These discontinuities are visible in the original fbx2g4 logs; the
 # stored values therefore cannot always index ASSIGNED_SKELETON_JOINT_NAMES
 # linearly across sleeve/accessory and lower-body boundaries.
+
 
 def u16(data: bytes, offset: int) -> int:
     return struct.unpack_from("<H", data, offset)[0]
@@ -207,7 +277,17 @@ def infer_raw_data_root(path: Path) -> Path | None:
 
 
 def configure_raw_data_root_from_path(path: Path) -> None:
-    global RAW_DATA_ROOT, CHARA_MODEL_XML, CHARA_MODEL_MAPS, CHARA_PARTS_JSON, CHARA_PARTS_DATA, UNIFORM_FAMILY_LOOKUP, UNIFORM_TEXTURE_LOOKUP, UNIFORM_FAMILY_SKELETON_CACHE, UNIFORM_CRC_SKELETON_CACHE, UNIFORM_CRC_SKELETON_CANDIDATES
+    global \
+        RAW_DATA_ROOT, \
+        CHARA_MODEL_XML, \
+        CHARA_MODEL_MAPS, \
+        CHARA_PARTS_JSON, \
+        CHARA_PARTS_DATA, \
+        UNIFORM_FAMILY_LOOKUP, \
+        UNIFORM_TEXTURE_LOOKUP, \
+        UNIFORM_FAMILY_SKELETON_CACHE, \
+        UNIFORM_CRC_SKELETON_CACHE, \
+        UNIFORM_CRC_SKELETON_CANDIDATES
     inferred = infer_raw_data_root(path)
     if inferred is None:
         return
@@ -326,9 +406,9 @@ def matrix_from_3x4(data: bytes, offset: int) -> list[float]:
     ]
 
 
-
-
-def matrix_from_srt(scale: list[float], rotation_xyzw: list[float], translation: list[float]) -> list[float]:
+def matrix_from_srt(
+    scale: list[float], rotation_xyzw: list[float], translation: list[float]
+) -> list[float]:
     sx, sy, sz = scale
     x, y, z, w = rotation_xyzw
     tx, ty, tz = translation
@@ -364,7 +444,9 @@ def matrix_from_srt(scale: list[float], rotation_xyzw: list[float], translation:
     ]
 
 
-def read_local_srt(data: bytes, section_offset: int, joint_count: int) -> tuple[list[list[float]], list[list[float]], list[list[float]], list[list[float]]]:
+def read_local_srt(
+    data: bytes, section_offset: int, joint_count: int
+) -> tuple[list[list[float]], list[list[float]], list[list[float]], list[list[float]]]:
     scales: list[list[float]] = []
     rotations: list[list[float]] = []
     translations: list[list[float]] = []
@@ -382,6 +464,7 @@ def read_local_srt(data: bytes, section_offset: int, joint_count: int) -> tuple[
         translations.append(translation)
         matrices.append(matrix_from_srt(scale, rotation, translation))
     return scales, rotations, translations, matrices
+
 
 def matrix_mul(a: list[float], b: list[float]) -> list[float]:
     out = [0.0] * 16
@@ -568,7 +651,9 @@ def parse_material_name_index_map(
     return mapping
 
 
-def infer_material_ref_table(data: bytes, material_table: int, material_count: int, fallback_base: int) -> int:
+def infer_material_ref_table(
+    data: bytes, material_table: int, material_count: int, fallback_base: int
+) -> int:
     starts_counts: list[tuple[int, int]] = []
     for index in range(material_count):
         off = material_table + index * 0x10
@@ -631,7 +716,11 @@ def infer_material_ref_table(data: bytes, material_table: int, material_count: i
 
 def parse_material_records(data: bytes, material_table: int, material_count: int) -> list[dict]:
     records: list[dict] = []
-    if material_count <= 0 or material_table <= 0 or material_table + material_count * 0x10 > len(data):
+    if (
+        material_count <= 0
+        or material_table <= 0
+        or material_table + material_count * 0x10 > len(data)
+    ):
         return records
     fallback_ref_table = material_table + material_count * 0x10 + 0x30
     ref_table = infer_material_ref_table(data, material_table, material_count, fallback_ref_table)
@@ -813,7 +902,9 @@ def parse_g4md(data: bytes, g4mg: bytes | None = None) -> dict:
         )
 
     vertex_layouts = parse_vertex_layouts(data, submesh_table + mesh_count * 0x50)
-    material_table = align(vertex_layouts_end(vertex_layouts, submesh_table + mesh_count * 0x50), 0x10)
+    material_table = align(
+        vertex_layouts_end(vertex_layouts, submesh_table + mesh_count * 0x50), 0x10
+    )
     material_records = parse_material_records(data, material_table, material_count)
     texture_hashes = parse_texture_hash_table(data)
     name_base_bias = u16(data, 0x0A) * 4
@@ -916,9 +1007,7 @@ def remap_joint_palette_by_g4md_hashes(
         return None, 0
     names = skeleton_info.get("names") or []
     hash_to_index = {
-        crc32b(name.encode("ascii")): index
-        for index, name in enumerate(names)
-        if name
+        crc32b(name.encode("ascii")): index for index, name in enumerate(names) if name
     }
     if not hash_to_index:
         return None, 0
@@ -978,7 +1067,9 @@ def layout_slice_sizes(layout: dict | None, stride: int) -> dict[int, int]:
     sizes: dict[int, int] = {}
     for index, element in enumerate(elements):
         current = element.get("value_offset", 0)
-        next_offset = elements[index + 1].get("value_offset", stride) if index + 1 < len(elements) else stride
+        next_offset = (
+            elements[index + 1].get("value_offset", stride) if index + 1 < len(elements) else stride
+        )
         sizes[element.get("index", index)] = max(0, next_offset - current)
     return sizes
 
@@ -998,7 +1089,9 @@ def uv0_offset_for_record(md_info: dict, record: dict) -> int | None:
     return uv0_offset_for_stride(vertex_stride_for_record(record))
 
 
-def decode_uv_pair_for_format(raw: bytes, format_id: int, invert_v: bool = False) -> tuple[float, float]:
+def decode_uv_pair_for_format(
+    raw: bytes, format_id: int, invert_v: bool = False
+) -> tuple[float, float]:
     def finish(u: float, v: float) -> tuple[float, float]:
         return u, 1.0 - v if invert_v else v
 
@@ -1048,9 +1141,13 @@ def read_uv0(g4mg: bytes, md_info: dict, record: dict, vertex_index: int) -> tup
         return u / 65535.0, 1.0 - (v / 65535.0)
 
     sizes = layout_slice_sizes(layout, stride)
-    raw_size = uv_raw_size_for_format(element.get("format_id", 0), sizes.get(element.get("index", 0), 4))
+    raw_size = uv_raw_size_for_format(
+        element.get("format_id", 0), sizes.get(element.get("index", 0), 4)
+    )
     off = record["vertex_offset"] + vertex_index * stride + element["value_offset"]
-    return decode_uv_pair_for_format(g4mg[off : off + raw_size], element.get("format_id", 0), invert_v=True)
+    return decode_uv_pair_for_format(
+        g4mg[off : off + raw_size], element.get("format_id", 0), invert_v=True
+    )
 
 
 def companion(path: Path, suffix: str) -> Path | None:
@@ -1322,7 +1419,9 @@ def normalize_skeleton_info(info: dict | None) -> dict | None:
         for joint_index, matrix in enumerate(bind_matrices):
             parent = parents[joint_index] if joint_index < len(parents) else joint_count
             if parent < len(bind_matrices) and parent != joint_index:
-                local_matrices.append(matrix_mul(rigid_matrix_inverse(bind_matrices[parent]), matrix))
+                local_matrices.append(
+                    matrix_mul(rigid_matrix_inverse(bind_matrices[parent]), matrix)
+                )
             else:
                 local_matrices.append(matrix)
     normalized = dict(info)
@@ -1353,6 +1452,7 @@ def load_target_skeleton_override() -> dict | None:
 
 def model_relpath_candidates(path: Path) -> set[str]:
     candidates = set()
+
     def add(relative: Path) -> None:
         rel_g4md = relative.with_suffix(".g4md").as_posix()
         rel_objbin = relative.with_suffix(".objbin").as_posix()
@@ -1437,7 +1537,11 @@ def load_chara_model_lookup() -> dict:
 
 def load_chara_parts_data() -> dict:
     global CHARA_PARTS_JSON, CHARA_PARTS_DATA
-    resolved_path = CHARA_PARTS_JSON if CHARA_PARTS_JSON and CHARA_PARTS_JSON.exists() else default_chara_parts_json()
+    resolved_path = (
+        CHARA_PARTS_JSON
+        if CHARA_PARTS_JSON and CHARA_PARTS_JSON.exists()
+        else default_chara_parts_json()
+    )
     if resolved_path != CHARA_PARTS_JSON:
         CHARA_PARTS_JSON = resolved_path
         CHARA_PARTS_DATA = None
@@ -1575,7 +1679,9 @@ def find_uniform_family_texture_containers(path: Path, material_names: Iterable[
             containers.extend(sorted(root.glob("*.g4tx")))
 
     def names_in_container(container: Path) -> list[str]:
-        return [texture["name"] for texture in parse_g4tx(container.read_bytes()).get("textures", [])]
+        return [
+            texture["name"] for texture in parse_g4tx(container.read_bytes()).get("textures", [])
+        ]
 
     return select_uniform_family_texture_containers(material_names, containers, names_in_container)
 
@@ -1610,9 +1716,17 @@ def load_uniform_family_lookup() -> dict[str, dict]:
         if info_entry.get("Name") != "CHARA_PARTS_CLOTHES_INFO":
             continue
         info_values = info_entry.get("Values") or []
-        family_model = str(info_values[0].get("Value") or "").replace("\\", "/") if len(info_values) > 0 else ""
+        family_model = (
+            str(info_values[0].get("Value") or "").replace("\\", "/")
+            if len(info_values) > 0
+            else ""
+        )
         family_type = int(info_values[2].get("Value") or 0) if len(info_values) > 2 else 0
-        family_skeleton_model = str(info_values[6].get("Value") or "").replace("\\", "/") if len(info_values) > 6 else ""
+        family_skeleton_model = (
+            str(info_values[6].get("Value") or "").replace("\\", "/")
+            if len(info_values) > 6
+            else ""
+        )
         lookup[stem] = {
             "family_info_index": info_index,
             "family_model": family_model,
@@ -1843,7 +1957,10 @@ def resolve_g4sk_from_chara_model(path: Path) -> tuple[bytes | None, str | None]
                         continue
                     seen.add(candidate)
                     if candidate.exists():
-                        return candidate.read_bytes(), f"{candidate} via {CHARA_MODEL_XML} ({model_key})"
+                        return (
+                            candidate.read_bytes(),
+                            f"{candidate} via {CHARA_MODEL_XML} ({model_key})",
+                        )
 
     # The shipped lookup remains useful for old extractions where no readable
     # config is present, but must not override the active dump's CFG.
@@ -2060,7 +2177,9 @@ def resolve_unique_face_crc_g4sk(path: Path) -> tuple[bytes | None, str | None]:
     return skeleton_data, f"{source} via unique complete face CRC32 palette"
 
 
-def find_skeleton_for_model(path: Path, pack_data: bytes | None = None) -> tuple[bytes | None, str | None]:
+def find_skeleton_for_model(
+    path: Path, pack_data: bytes | None = None
+) -> tuple[bytes | None, str | None]:
     palette_path = companion(path, ".g4md") if pack_data is not None else path
     if palette_path is None:
         palette_path = path
@@ -2081,9 +2200,7 @@ def find_skeleton_for_model(path: Path, pack_data: bytes | None = None) -> tuple
     # after exact palette coverage proves that it is the sibling mesh's rig.
     own = companion(path, ".g4sk")
     own_data = own.read_bytes() if own is not None else None
-    own_matches = (
-        own_data is not None and g4sk_matches_or_unskinned_g4md(own_data, palette_path)
-    )
+    own_matches = own_data is not None and g4sk_matches_or_unskinned_g4md(own_data, palette_path)
     own_pack = companion(path, ".g4pkm")
     if own_pack is not None:
         for skeleton_data, source in g4sk_entries_from_candidate(own_pack):
@@ -2118,7 +2235,9 @@ def find_skeleton_for_model(path: Path, pack_data: bytes | None = None) -> tuple
                 if g4sk_covers_g4md_palette(skeleton_data, palette_path):
                     return skeleton_data, f"{source} via local face variant rig"
 
-    skeleton_data, skeleton_source = resolve_uniform_generic_g4sk(palette_path, allow_common_fallback=False)
+    skeleton_data, skeleton_source = resolve_uniform_generic_g4sk(
+        palette_path, allow_common_fallback=False
+    )
     if skeleton_data is not None:
         return skeleton_data, skeleton_source
     skeleton_data, skeleton_source = resolve_g4sk_from_chara_model(palette_path)
@@ -2147,7 +2266,6 @@ def find_skeleton_for_model(path: Path, pack_data: bytes | None = None) -> tuple
         if skeleton_data is not None:
             return skeleton_data, skeleton_source
     return resolve_uniform_generic_g4sk(palette_path)
-
 
 
 def find_texture_for_model(path: Path) -> Path | None:
@@ -2279,13 +2397,20 @@ def find_effect_texture_containers(path: Path) -> list[Path]:
     # to the model.
     for platform in ("dx11", "nx"):
         candidates.append(
-            RAW_DATA_ROOT / platform / "effect" / "battle" / "common" / "effCmnTex" / "effCmnTex.g4tx"
+            RAW_DATA_ROOT
+            / platform
+            / "effect"
+            / "battle"
+            / "common"
+            / "effCmnTex"
+            / "effCmnTex.g4tx"
         )
 
     candidates.extend(declared_g4tx_paths_from_objbin(path))
     seen = set()
     return [
-        candidate for candidate in candidates
+        candidate
+        for candidate in candidates
         if candidate.is_file() and not (candidate in seen or seen.add(candidate))
     ]
 
@@ -2316,7 +2441,11 @@ def find_texture_containers_for_model(path: Path) -> list[Path]:
             if base_stem != path.stem.lower():
                 for platform in ("dx11", "nx"):
                     candidates.append(
-                        RAW_DATA_ROOT / platform / Path(*parts[1:-2]) / base_stem / f"{base_stem}.g4tx"
+                        RAW_DATA_ROOT
+                        / platform
+                        / Path(*parts[1:-2])
+                        / base_stem
+                        / f"{base_stem}.g4tx"
                     )
             world = parts[3]
             candidates.append(RAW_DATA_ROOT / "dx11" / "map" / "cubemap" / f"{world}_cubemap.g4tx")
@@ -2352,8 +2481,12 @@ def find_shared_map_texture_containers(path: Path, material_names: Iterable[str]
             folders.insert(0, extended.group(1))
         for folder in folders:
             for platform in ("dx11", "nx"):
-                candidates.append(RAW_DATA_ROOT / platform / "map" / map_kind / folder / f"{folder}.g4tx")
-                candidates.append(RAW_DATA_ROOT / platform / "map" / map_kind / folder / f"{stem}.g4tx")
+                candidates.append(
+                    RAW_DATA_ROOT / platform / "map" / map_kind / folder / f"{folder}.g4tx"
+                )
+                candidates.append(
+                    RAW_DATA_ROOT / platform / "map" / map_kind / folder / f"{stem}.g4tx"
+                )
 
     seen = set()
     unique: list[Path] = []
@@ -2365,7 +2498,9 @@ def find_shared_map_texture_containers(path: Path, material_names: Iterable[str]
     return unique
 
 
-def find_shared_texture_containers_for_materials(path: Path, material_names: Iterable[str]) -> list[Path]:
+def find_shared_texture_containers_for_materials(
+    path: Path, material_names: Iterable[str]
+) -> list[Path]:
     try:
         rel = path.relative_to(RAW_DATA_ROOT)
     except ValueError:
@@ -2438,7 +2573,9 @@ NXTCH_FORMATS = {
 }
 
 
-def nx_bitfield(bit_depth: int, block_compressed: bool, height: int, extension_count: int) -> list[tuple[int, int]]:
+def nx_bitfield(
+    bit_depth: int, block_compressed: bool, height: int, extension_count: int
+) -> list[tuple[int, int]]:
     if block_compressed:
         fields = {
             4: [(1, 0), (2, 0), (0, 1), (0, 2), (4, 0), (0, 4), (8, 0), (0, 8), (0, 16), (16, 0)],
@@ -2468,7 +2605,9 @@ def nx_bitfield(bit_depth: int, block_compressed: bool, height: int, extension_c
     return fields
 
 
-def nx_swizzle_dimensions(width: int, height: int, fields: list[tuple[int, int]]) -> tuple[int, int, int, int]:
+def nx_swizzle_dimensions(
+    width: int, height: int, fields: list[tuple[int, int]]
+) -> tuple[int, int, int, int]:
     macro_width = 0
     macro_height = 0
     for x_value, y_value in fields:
@@ -2501,7 +2640,15 @@ def nx_swizzle_point(index: int, width: int, fields: list[tuple[int, int]]) -> t
     return x, y
 
 
-def deswizzle_nxtch_level(data: bytes, width: int, height: int, bit_depth: int, unit_size: int, extension_count: int, block_compressed: bool) -> bytes:
+def deswizzle_nxtch_level(
+    data: bytes,
+    width: int,
+    height: int,
+    bit_depth: int,
+    unit_size: int,
+    extension_count: int,
+    block_compressed: bool,
+) -> bytes:
     fields = nx_bitfield(bit_depth, block_compressed, height, extension_count)
     padded_width, padded_height, _, _ = nx_swizzle_dimensions(width, height, fields)
     if block_compressed:
@@ -2529,7 +2676,15 @@ def deswizzle_nxtch_level(data: bytes, width: int, height: int, bit_depth: int, 
     return bytes(output)
 
 
-def swizzle_nxtch_level(data: bytes, width: int, height: int, bit_depth: int, unit_size: int, extension_count: int, block_compressed: bool) -> bytes:
+def swizzle_nxtch_level(
+    data: bytes,
+    width: int,
+    height: int,
+    bit_depth: int,
+    unit_size: int,
+    extension_count: int,
+    block_compressed: bool,
+) -> bytes:
     fields = nx_bitfield(bit_depth, block_compressed, height, extension_count)
     padded_width, padded_height, _, _ = nx_swizzle_dimensions(width, height, fields)
     if block_compressed:
@@ -2561,14 +2716,29 @@ def swizzle_nxtch_level(data: bytes, width: int, height: int, bit_depth: int, un
 def dds_header(width: int, height: int, mip_count: int, format_code: int, data_size: int) -> bytes:
     bit_depth, _, fourcc = NXTCH_FORMATS[format_code]
     flags = 0x0002100F if mip_count > 1 else 0x0000100F
-    pitch = data_size if format_code == 0x25 else max(1, (width + 3) // 4) * NXTCH_FORMATS[format_code][1]
+    pitch = (
+        data_size
+        if format_code == 0x25
+        else max(1, (width + 3) // 4) * NXTCH_FORMATS[format_code][1]
+    )
     header = bytearray(128 + (20 if format_code == 0x4D else 0))
     struct.pack_into("<4s7I", header, 0, b"DDS ", 124, flags, height, width, pitch, 0, mip_count)
     struct.pack_into("<I", header, 76, 32)
     if fourcc is not None:
         struct.pack_into("<I4s", header, 80, 0x4, fourcc)
     else:
-        struct.pack_into("<I4sI4I", header, 80, 0x41, b"\0\0\0\0", 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000)
+        struct.pack_into(
+            "<I4sI4I",
+            header,
+            80,
+            0x41,
+            b"\0\0\0\0",
+            32,
+            0x000000FF,
+            0x0000FF00,
+            0x00FF0000,
+            0xFF000000,
+        )
     caps = 0x401008 if mip_count > 1 else 0x1000
     struct.pack_into("<I", header, 108, caps)
     if format_code == 0x4D:
@@ -2593,10 +2763,17 @@ def nxtch_to_dds(payload: bytes) -> bytes:
         end = 0x100 + (offsets[level + 1] if level + 1 < len(offsets) else len(payload) - 0x100)
         level_width = max(1, width >> level)
         level_height = max(1, height >> level)
-        levels.append(deswizzle_nxtch_level(
-            payload[start:end], level_width, level_height, bit_depth, unit_size,
-            extension_count, block_compressed,
-        ))
+        levels.append(
+            deswizzle_nxtch_level(
+                payload[start:end],
+                level_width,
+                level_height,
+                bit_depth,
+                unit_size,
+                extension_count,
+                block_compressed,
+            )
+        )
     return dds_header(width, height, mip_count, format_code, len(levels[0])) + b"".join(levels)
 
 
@@ -2646,10 +2823,17 @@ def dds_to_nxtch(data: bytes, template: bytes | None = None) -> bytes:
         if len(linear) != linear_size:
             raise ValueError(f"truncated DDS mip {level}")
         offsets.append(sum(len(item) for item in levels))
-        levels.append(swizzle_nxtch_level(
-            linear, level_width, level_height, bit_depth, unit_size,
-            extension_count, block_compressed,
-        ))
+        levels.append(
+            swizzle_nxtch_level(
+                linear,
+                level_width,
+                level_height,
+                bit_depth,
+                unit_size,
+                extension_count,
+                block_compressed,
+            )
+        )
         cursor += linear_size
 
     texture_data = b"".join(levels)
@@ -2669,7 +2853,9 @@ def dds_half_float_cubemap(data: bytes) -> tuple[int, int, int] | None:
     caps2 = u32(data, 112)
     if pixel_format != 113 or not caps2 & 0x200 or not width or width != height:
         return None
-    face_size = sum(max(1, width >> level) * max(1, height >> level) * 8 for level in range(mip_count))
+    face_size = sum(
+        max(1, width >> level) * max(1, height >> level) * 8 for level in range(mip_count)
+    )
     if 128 + face_size * 6 > len(data):
         return None
     return width, mip_count, face_size
@@ -2701,7 +2887,14 @@ def cubemap_to_radiance_hdr(data: bytes, face_width: int, mip_count: int, face_s
             return b"\0\0\0\0"
         mantissa, exponent = math.frexp(maximum)
         scale = mantissa * 256.0 / maximum
-        return bytes((min(255, int(rgb[0] * scale)), min(255, int(rgb[1] * scale)), min(255, int(rgb[2] * scale)), exponent + 128))
+        return bytes(
+            (
+                min(255, int(rgb[0] * scale)),
+                min(255, int(rgb[1] * scale)),
+                min(255, int(rgb[2] * scale)),
+                exponent + 128,
+            )
+        )
 
     pixels = bytearray()
     for row in range(height):
@@ -3104,7 +3297,10 @@ def texture_usage_from_name(name: str) -> str:
     if lower.endswith(".2") and not lower.endswith(("line.2", "sp.2", "oc.2")):
         return "normal_or_packed"
     if lower.endswith(".1") and (
-        lower.endswith("_re.1") or lower.endswith("_n.1") or lower.endswith("_nm.1") or "_normal" in lower
+        lower.endswith("_re.1")
+        or lower.endswith("_n.1")
+        or lower.endswith("_nm.1")
+        or "_normal" in lower
     ):
         return "base"
     if lower.endswith(".2") or lower.endswith("_n") or lower.endswith("_nm") or "_normal" in lower:
@@ -3212,7 +3408,13 @@ def material_texture_keys(material_name: str, model_stem: str, mesh_name: str = 
             prefix, number = shared.groups()
             shared_prefix = "stairs" if prefix.startswith("stair") else prefix
             keys.append(f"{world}g_{shared_prefix}{number}_re")
-        if "whitewall" in tail or "white_wall" in tail or "wall" in tail or "piller" in tail or "pillar" in tail:
+        if (
+            "whitewall" in tail
+            or "white_wall" in tail
+            or "wall" in tail
+            or "piller" in tail
+            or "pillar" in tail
+        ):
             keys.append(f"{world}g_wall01_re")
             keys.append(f"{world}g_wall02_re")
         if "metal" in tail and not shared:
@@ -3420,7 +3622,9 @@ def choose_texture_from_material_record(
         if texture is None:
             continue
         usage = texture_usage_from_name(texture.stem)
-        if usage in {"base", "transparent_base"} and texture_matches_material_semantics(texture, material_name, model_stem):
+        if usage in {"base", "transparent_base"} and texture_matches_material_semantics(
+            texture, material_name, model_stem
+        ):
             candidates.append(texture)
     if candidates:
         return sorted(candidates, key=lambda item: texture_variant_score(item, model_stem))[0]
@@ -3469,7 +3673,9 @@ def enriched_material_records(md_info: dict, texture_paths: list[Path]) -> list[
     return enriched
 
 
-def choose_texture(material_name: str, extracted: list[Path], model_stem: str, mesh_name: str = "") -> Path | None:
+def choose_texture(
+    material_name: str, extracted: list[Path], model_stem: str, mesh_name: str = ""
+) -> Path | None:
     if not extracted:
         return None
     wanted_keys = material_texture_keys(material_name, model_stem, mesh_name)
@@ -3611,15 +3817,21 @@ def build_skin_controller(payload: dict, skeleton_info: dict) -> tuple[str, dict
     if not used_global:
         return None
 
-    local_by_global = {global_index: local_index for local_index, global_index in enumerate(used_global)}
+    local_by_global = {
+        global_index: local_index for local_index, global_index in enumerate(used_global)
+    }
     joint_names = [
-        names[global_index] if global_index < len(names) and names[global_index] else joint_node_id(global_index)
+        names[global_index]
+        if global_index < len(names) and names[global_index]
+        else joint_node_id(global_index)
         for global_index in used_global
     ]
     inverse_bind_matrices = [
         component
         for global_index in used_global
-        for component in (matrices[global_index] if global_index < len(matrices) else identity_matrix())
+        for component in (
+            matrices[global_index] if global_index < len(matrices) else identity_matrix()
+        )
     ]
 
     weights: list[float] = []
@@ -3663,8 +3875,8 @@ def build_skin_controller(payload: dict, skeleton_info: dict) -> tuple[str, dict
         f"{dae_float_array(weights)}</float_array><technique_common>"
         f'<accessor source="#{cid}_weights_array" count="{len(weights)}" stride="1">'
         f'<param name="WEIGHT" type="float"/></accessor></technique_common></source>'
-        f"<joints><input semantic=\"JOINT\" source=\"#{cid}_joints\"/>"
-        f"<input semantic=\"INV_BIND_MATRIX\" source=\"#{cid}_bind_poses\"/></joints>"
+        f'<joints><input semantic="JOINT" source="#{cid}_joints"/>'
+        f'<input semantic="INV_BIND_MATRIX" source="#{cid}_bind_poses"/></joints>'
         f'<vertex_weights count="{len(vcount)}"><input semantic="JOINT" source="#{cid}_joints" offset="0"/>'
         f'<input semantic="WEIGHT" source="#{cid}_weights" offset="1"/>'
         f"<vcount>{dae_int_array(vcount)}</vcount><v>{dae_int_array(v)}</v></vertex_weights>"
@@ -3682,7 +3894,9 @@ def build_skin_controller(payload: dict, skeleton_info: dict) -> tuple[str, dict
     return controller, summary
 
 
-def compute_smooth_normals(positions: list[tuple[float, float, float]], indices: Iterable[int]) -> list[tuple[float, float, float]]:
+def compute_smooth_normals(
+    positions: list[tuple[float, float, float]], indices: Iterable[int]
+) -> list[tuple[float, float, float]]:
     normals = [[0.0, 0.0, 0.0] for _ in positions]
     index_list = list(indices)
     for face in range(0, len(index_list) - 2, 3):
@@ -3739,7 +3953,9 @@ def read_native_normals(
     return normals
 
 
-def read_native_normals_for_record(g4mg: bytes, md_info: dict, record: dict) -> list[tuple[float, float, float]] | None:
+def read_native_normals_for_record(
+    g4mg: bytes, md_info: dict, record: dict
+) -> list[tuple[float, float, float]] | None:
     layout = layout_for_record(md_info, record)
     element = layout_element(layout, 2)
     if element is None:
@@ -3766,9 +3982,7 @@ def read_native_normals_for_record(g4mg: bytes, md_info: dict, record: dict) -> 
     return normals
 
 
-def read_skin_influences(
-    g4mg: bytes, md_info: dict, record: dict
-) -> list[list[tuple[int, float]]]:
+def read_skin_influences(g4mg: bytes, md_info: dict, record: dict) -> list[list[tuple[int, float]]]:
     vertex_offset = record["vertex_offset"]
     vertex_count = record["vertex_count"]
     vertex_stride = vertex_stride_for_record(record)
@@ -3785,10 +3999,14 @@ def read_skin_influences(
             for vertex_index in range(vertex_count):
                 base = vertex_offset + vertex_index * vertex_stride
                 weight_raw = g4mg[
-                    base + weight_element["value_offset"] : base + weight_element["value_offset"] + weight_size
+                    base + weight_element["value_offset"] : base
+                    + weight_element["value_offset"]
+                    + weight_size
                 ]
                 joint_raw = g4mg[
-                    base + joint_element["value_offset"] : base + joint_element["value_offset"] + joint_size
+                    base + joint_element["value_offset"] : base
+                    + joint_element["value_offset"]
+                    + joint_size
                 ]
                 weights = struct.unpack_from(
                     "<" + "H" * influence_count, weight_raw.ljust(influence_count * 2, b"\0"), 0
@@ -3828,7 +4046,9 @@ def rigid_skin_influences(vertex_count: int) -> list[list[tuple[int, float]]]:
     return [[(0, 1.0)] for _ in range(vertex_count)]
 
 
-def skin_palette_fit(influences: list[list[tuple[int, float]]], palette_length: int) -> tuple[int, int]:
+def skin_palette_fit(
+    influences: list[list[tuple[int, float]]], palette_length: int
+) -> tuple[int, int]:
     valid = 0
     invalid = 0
     for vertex in influences:
@@ -3866,7 +4086,9 @@ def skeleton_bone_orientation(skeleton_info: dict | None) -> dict | None:
     }
 
 
-def face_rigid_joint_override(path: Path, skeleton_info: dict | None, joint_palette: list[int]) -> list[int] | None:
+def face_rigid_joint_override(
+    path: Path, skeleton_info: dict | None, joint_palette: list[int]
+) -> list[int] | None:
     if skeleton_info is None or len(joint_palette) != 1:
         return None
     if not is_face_model_path(path):
@@ -3963,7 +4185,9 @@ def remap_compact_assigned_joint_palette(
     return remapped, changed
 
 
-def remap_assigned_joint_palette(joint_palette: list[int], skeleton_info: dict | None) -> tuple[list[int], int]:
+def remap_assigned_joint_palette(
+    joint_palette: list[int], skeleton_info: dict | None
+) -> tuple[list[int], int]:
     if not joint_palette_uses_assigned_indices(joint_palette, skeleton_info):
         return joint_palette, 0
     return remap_compact_assigned_joint_palette(joint_palette, skeleton_info)
@@ -4120,7 +4344,9 @@ def remap_joint_palette_by_name(
         return joint_palette, 0
     source_names = source_skeleton.get("names", [])
     source_parents = source_skeleton.get("parent_indices", [])
-    target_indices = {name: index for index, name in enumerate(target_skeleton.get("names", [])) if name}
+    target_indices = {
+        name: index for index, name in enumerate(target_skeleton.get("names", [])) if name
+    }
     remapped = []
     changed = 0
     for joint_index in joint_palette:
@@ -4135,7 +4361,11 @@ def remap_joint_palette_by_name(
                 target_index = target_indices.get(source_name.removesuffix("_wgt_1_0"))
             if target_index is not None:
                 break
-            parent = source_parents[source_index] if source_index < len(source_parents) else len(source_names)
+            parent = (
+                source_parents[source_index]
+                if source_index < len(source_parents)
+                else len(source_names)
+            )
             if parent >= len(source_names) or parent == source_index:
                 break
             source_index = parent
@@ -4167,9 +4397,8 @@ def palette_spatial_error(
         for local_index, weight in influences[vertex_index]:
             if weight <= 0.0:
                 continue
-            if (
-                local_index >= len(joint_palette)
-                or not 0 <= joint_palette[local_index] < len(bind_matrices)
+            if local_index >= len(joint_palette) or not 0 <= joint_palette[local_index] < len(
+                bind_matrices
             ):
                 total += 100.0 * weight
                 total_weight += weight
@@ -4194,8 +4423,7 @@ def palette_weighted_centroids(
             for axis in range(3):
                 totals[local_index][axis + 1] += position[axis] * weight
     return [
-        tuple(row[axis + 1] / row[0] for axis in range(3)) if row[0] else None
-        for row in totals
+        tuple(row[axis + 1] / row[0] for axis in range(3)) if row[0] else None for row in totals
     ]
 
 
@@ -4272,23 +4500,31 @@ def refine_palette_by_bind_names(
         if centroid is None or joint_index >= len(bind_matrices):
             return math.inf
         matrix = bind_matrices[joint_index]
-        return math.sqrt(sum(
-            (centroid[axis] - matrix[axis * 4 + 3]) ** 2
-            for axis in range(3)
-        ))
+        return math.sqrt(sum((centroid[axis] - matrix[axis * 4 + 3]) ** 2 for axis in range(3)))
 
     def semantic_match(local_index: int, joint_index: int) -> bool:
         centroid = centroids[local_index]
         name = names[joint_index] if joint_index < len(names) else ""
         if centroid is None:
             return True
-        side_matches = (
-            (name.startswith("l_") and centroid[0] >= -0.01)
-            or (name.startswith("r_") and centroid[0] <= 0.01)
+        side_matches = (name.startswith("l_") and centroid[0] >= -0.01) or (
+            name.startswith("r_") and centroid[0] <= 0.01
         )
         limb_tokens = (
-            "_s_", "_a_", "_w_", "_slv", "_idx_", "_mid_", "_rng_",
-            "_thb_", "_pky_", "_soh_", "_fa_", "_l_", "_foot_", "_pnt_",
+            "_s_",
+            "_a_",
+            "_w_",
+            "_slv",
+            "_idx_",
+            "_mid_",
+            "_rng_",
+            "_thb_",
+            "_pky_",
+            "_soh_",
+            "_fa_",
+            "_l_",
+            "_foot_",
+            "_pnt_",
         )
         if side_matches and any(token in name for token in limb_tokens):
             return True
@@ -4304,22 +4540,23 @@ def refine_palette_by_bind_names(
     if not bad_rows:
         return palette, 0
     shoe_palette = len(palette) <= 8 and all(
-        centroid is None or centroid[1] < 0.45
-        for centroid in centroids
+        centroid is None or centroid[1] < 0.45 for centroid in centroids
     )
     if shoe_palette:
         bad_rows = [index for index, centroid in enumerate(centroids) if centroid is not None]
     locked = {joint_index for index, joint_index in enumerate(palette) if index not in bad_rows}
     target_by_name = {name: index for index, name in enumerate(names) if name}
-    candidates = list(dict.fromkeys(
-        target_by_name[name]
-        for name in ASSIGNED_SKELETON_JOINT_NAMES
-        if name in target_by_name
-        and target_by_name[name] not in locked
-        and name not in {"output", "c_global_0_0", "c_ball_1_0"}
-        and (shoe_palette or "_pnt_" not in name)
-        and (not shoe_palette or re.fullmatch(r"[lr]_(?:l|foot|pnt)_\d+_\d+", name))
-    ))
+    candidates = list(
+        dict.fromkeys(
+            target_by_name[name]
+            for name in ASSIGNED_SKELETON_JOINT_NAMES
+            if name in target_by_name
+            and target_by_name[name] not in locked
+            and name not in {"output", "c_global_0_0", "c_ball_1_0"}
+            and (shoe_palette or "_pnt_" not in name)
+            and (not shoe_palette or re.fullmatch(r"[lr]_(?:l|foot|pnt)_\d+_\d+", name))
+        )
+    )
     if len(candidates) < len(bad_rows):
         return palette, 0
     costs = []
@@ -4402,10 +4639,9 @@ def remap_palette_by_target_segments(
                     valid = False
                     break
                 matrix = matrices[joint_index]
-                score += math.sqrt(sum(
-                    (centroid[axis] - matrix[axis * 4 + 3]) ** 2
-                    for axis in range(3)
-                ))
+                score += math.sqrt(
+                    sum((centroid[axis] - matrix[axis * 4 + 3]) ** 2 for axis in range(3))
+                )
                 candidate.append(joint_index)
             if not valid:
                 continue
@@ -4436,7 +4672,8 @@ def remap_palette_by_body_assignment(
     assigned = 0
     for side in ("l", "r", "c"):
         rows = [
-            index for index, centroid in enumerate(centroids)
+            index
+            for index, centroid in enumerate(centroids)
             if centroid is not None
             and (
                 (side == "l" and centroid[0] > 0.05)
@@ -4445,7 +4682,8 @@ def remap_palette_by_body_assignment(
             )
         ]
         candidates = [
-            index for index, name in enumerate(names)
+            index
+            for index, name in enumerate(names)
             if name
             and not re.match(r"[lrc]_(?:mnt|pkt)_", name)
             and BODY_JOINT_RE.match(name)
@@ -4460,13 +4698,17 @@ def remap_palette_by_body_assignment(
         costs = []
         for local_index in rows:
             centroid = centroids[local_index]
-            costs.append([
-                math.sqrt(sum(
-                    (centroid[axis] - matrices[joint_index][axis * 4 + 3]) ** 2
-                    for axis in range(3)
-                ))
-                for joint_index in candidates
-            ])
+            costs.append(
+                [
+                    math.sqrt(
+                        sum(
+                            (centroid[axis] - matrices[joint_index][axis * 4 + 3]) ** 2
+                            for axis in range(3)
+                        )
+                    )
+                    for joint_index in candidates
+                ]
+            )
         assignment = minimum_cost_assignment(costs)
         if any(index < 0 for index in assignment):
             continue
@@ -4491,35 +4733,26 @@ def refine_arm_palette_by_centroids(
     result = palette[:]
     changed = 0
     for side, direction in (("l", 1.0), ("r", -1.0)):
+
         def preserve_assignment(index: int) -> bool:
             if not 0 <= palette[index] < len(names):
                 return False
             name = names[palette[index]]
             return bool(
-                re.match(rf"^{side}_(?:s|a|wph)_", name)
-                or re.match(rf"^{side}_slv1_", name)
+                re.match(rf"^{side}_(?:s|a|wph)_", name) or re.match(rf"^{side}_slv1_", name)
             )
 
         side_rows = [
-            index for index, centroid in enumerate(centroids)
-            if centroid is not None
-            and centroid[1] > 1.05
-            and centroid[0] * direction > 0.05
+            index
+            for index, centroid in enumerate(centroids)
+            if centroid is not None and centroid[1] > 1.05 and centroid[0] * direction > 0.05
         ]
-        locked = {
-            palette[index]
-            for index in side_rows
-            if preserve_assignment(index)
-        }
-        rows = [
-            index for index in side_rows
-            if not preserve_assignment(index)
-        ]
-        pattern = re.compile(
-            rf"^{side}_(?:s|a|w|wph|idx|mid|rng|thb|soh|pky|fa|bnd|slv\d*)_"
-        )
+        locked = {palette[index] for index in side_rows if preserve_assignment(index)}
+        rows = [index for index in side_rows if not preserve_assignment(index)]
+        pattern = re.compile(rf"^{side}_(?:s|a|w|wph|idx|mid|rng|thb|soh|pky|fa|bnd|slv\d*)_")
         candidates = [
-            index for index, name in enumerate(names)
+            index
+            for index, name in enumerate(names)
             if pattern.match(name) and "_mnt_" not in name and index not in locked
         ]
         if not rows or len(candidates) < len(rows):
@@ -4527,13 +4760,17 @@ def refine_arm_palette_by_centroids(
         costs = []
         for local_index in rows:
             centroid = centroids[local_index]
-            costs.append([
-                math.sqrt(sum(
-                    (centroid[axis] - matrices[joint_index][axis * 4 + 3]) ** 2
-                    for axis in range(3)
-                ))
-                for joint_index in candidates
-            ])
+            costs.append(
+                [
+                    math.sqrt(
+                        sum(
+                            (centroid[axis] - matrices[joint_index][axis * 4 + 3]) ** 2
+                            for axis in range(3)
+                        )
+                    )
+                    for joint_index in candidates
+                ]
+            )
         assignment = minimum_cost_assignment(costs)
         if any(index < 0 for index in assignment):
             continue
@@ -4554,7 +4791,8 @@ def sanitize_palette_body_names(
     names = target_skeleton.get("names", [])
     matrices = target_skeleton.get("bind_matrices", [])
     body_candidates = [
-        index for index, name in enumerate(names)
+        index
+        for index, name in enumerate(names)
         if name and "_wgt_" not in name and BODY_JOINT_RE.match(name)
     ]
     if len(body_candidates) < 20 or len(names) != len(matrices):
@@ -4574,13 +4812,18 @@ def sanitize_palette_body_names(
         )
         invalid = bool(
             re.search(r"(?:eye|eld|ebw|lip|tng|jaw|chk|hir)", name, re.IGNORECASE)
-            or (name and BODY_JOINT_RE.match(name) is None and name not in {"output", "c_global_0_0", "boundingBox"})
+            or (
+                name
+                and BODY_JOINT_RE.match(name) is None
+                and name not in {"output", "c_global_0_0", "boundingBox"}
+            )
         )
         if centroid is None or not (wrong_side or invalid):
             continue
         side = "l" if centroid[0] > 0.05 else "r" if centroid[0] < -0.05 else "c"
         candidates = [
-            candidate for candidate in body_candidates
+            candidate
+            for candidate in body_candidates
             if (
                 (side == "l" and names[candidate].startswith("l_"))
                 or (side == "r" and names[candidate].startswith("r_"))
@@ -4589,10 +4832,12 @@ def sanitize_palette_body_names(
         ]
         if not candidates:
             continue
-        result[local_index] = min(candidates, key=lambda candidate: sum(
-            (centroid[axis] - matrices[candidate][axis * 4 + 3]) ** 2
-            for axis in range(3)
-        ))
+        result[local_index] = min(
+            candidates,
+            key=lambda candidate: sum(
+                (centroid[axis] - matrices[candidate][axis * 4 + 3]) ** 2 for axis in range(3)
+            ),
+        )
         changed += result[local_index] != joint_index
     return result, changed
 
@@ -4616,12 +4861,20 @@ def choose_uniform_joint_palette(
         refined_score = palette_spatial_error(positions, influences, palette, target_skeleton)
         direct_score = palette_spatial_error(positions, influences, joint_palette, target_skeleton)
         if remap_count and refined_score < direct_score:
-            candidates.append((palette, remap_count, "physical target G4SK indices + arm centroid refinement"))
-    if joint_palette and min(joint_palette) > 0 and max(joint_palette) <= len(ASSIGNED_SKELETON_JOINT_NAMES):
+            candidates.append(
+                (palette, remap_count, "physical target G4SK indices + arm centroid refinement")
+            )
+    if (
+        joint_palette
+        and min(joint_palette) > 0
+        and max(joint_palette) <= len(ASSIGNED_SKELETON_JOINT_NAMES)
+    ):
         remapped, changed = remap_compact_assigned_joint_palette(joint_palette, target_skeleton)
         candidates.append((remapped, changed, "shared uniform skeleton indices"))
     for source_skeleton, source in source_skeletons:
-        remapped, changed = remap_joint_palette_by_name(joint_palette, source_skeleton, target_skeleton)
+        remapped, changed = remap_joint_palette_by_name(
+            joint_palette, source_skeleton, target_skeleton
+        )
         candidates.append((remapped, changed, source))
     segmented, segmented_count = remap_palette_by_target_segments(
         joint_palette, positions, influences, target_skeleton
@@ -4659,7 +4912,9 @@ def choose_uniform_joint_palette(
             joint_palette, positions, influences, target_skeleton
         )
         if assigned_count:
-            candidates.append((assigned, assigned_count, "target G4SK one-to-one body-name assignment"))
+            candidates.append(
+                (assigned, assigned_count, "target G4SK one-to-one body-name assignment")
+            )
 
     unique = {}
     for palette, changed, source in candidates:
@@ -4680,7 +4935,9 @@ def choose_uniform_joint_palette(
     return palette, changed, source, score
 
 
-def remap_shoe_point_helpers(joint_palette: list[int], target_skeleton: dict) -> tuple[list[int], int]:
+def remap_shoe_point_helpers(
+    joint_palette: list[int], target_skeleton: dict
+) -> tuple[list[int], int]:
     names = target_skeleton.get("names", [])
     indices = {name: index for index, name in enumerate(names) if name}
     remapped = joint_palette[:]
@@ -4717,7 +4974,9 @@ def remap_separated_shoe_palette(
     if len(joint_palette) != 6:
         return None, 0
 
-    target_indices = {name: index for index, name in enumerate(target_skeleton.get("names", [])) if name}
+    target_indices = {
+        name: index for index, name in enumerate(target_skeleton.get("names", [])) if name
+    }
     if not target_indices:
         return None, 0
 
@@ -4755,7 +5014,9 @@ def remap_separated_shoe_palette(
                 and sum(name.startswith("r_") for name in names) == 3
             ):
                 remapped = [target_indices[name] for name in names]
-                return remapped, sum(before != after for before, after in zip(joint_palette, remapped))
+                return remapped, sum(
+                    before != after for before, after in zip(joint_palette, remapped)
+                )
 
     # Older extracted model variants can lack the full table. Keep the
     # verified c000201 fallback for those files only.
@@ -4781,7 +5042,10 @@ def remap_separated_shoe_palette(
         # physical G4SK indices and continue through the general path.
         if len(set(names)) != 6 or any(leg_helper.fullmatch(name or "") is None for name in names):
             continue
-        if sum(name.startswith("l_") for name in names) != 3 or sum(name.startswith("r_") for name in names) != 3:
+        if (
+            sum(name.startswith("l_") for name in names) != 3
+            or sum(name.startswith("r_") for name in names) != 3
+        ):
             continue
         if any(name not in target_indices for name in names):
             continue
@@ -4794,7 +5058,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
     md_data, g4mg, _ = read_model_buffers(path)
     md_info = parse_g4md(md_data, g4mg)
     source_data = path.read_bytes()
-    skeleton_data, skeleton_source = find_skeleton_for_model(path, source_data if source_data[:4] == b"G4PK" else None)
+    skeleton_data, skeleton_source = find_skeleton_for_model(
+        path, source_data if source_data[:4] == b"G4PK" else None
+    )
     if skeleton_data is not None:
         skeleton_info = parse_g4sk(skeleton_data)
     else:
@@ -4812,9 +5078,7 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
     assigned_skeleton = skeleton_is_assigned(path, skeleton_source)
     uniform_model = "/_uniform/" in normalized_path and skeleton_info is not None
     uniform_palette_sources = (
-        uniform_palette_source_skeleton_candidates_for_model(path)
-        if uniform_model
-        else []
+        uniform_palette_source_skeleton_candidates_for_model(path) if uniform_model else []
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     dae_path = out_dir / f"{path.stem}.dae"
@@ -4825,26 +5089,36 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         texture_containers = find_texture_containers_for_model(path)
         texture_containers.extend(
             candidate
-            for candidate in find_uniform_texture_containers_from_chara(path, md_info.get("material_names", []))
+            for candidate in find_uniform_texture_containers_from_chara(
+                path, md_info.get("material_names", [])
+            )
             if candidate not in texture_containers
         )
         texture_containers.extend(
             candidate
-            for candidate in find_uniform_family_texture_containers(path, md_info.get("material_names", []))
+            for candidate in find_uniform_family_texture_containers(
+                path, md_info.get("material_names", [])
+            )
             if candidate not in texture_containers
         )
         texture_containers.extend(
             candidate
-            for candidate in find_shared_map_texture_containers(path, md_info.get("material_names", []))
+            for candidate in find_shared_map_texture_containers(
+                path, md_info.get("material_names", [])
+            )
             if candidate not in texture_containers
         )
         texture_containers.extend(
             candidate
-            for candidate in find_shared_texture_containers_for_materials(path, md_info.get("material_names", []))
+            for candidate in find_shared_texture_containers_for_materials(
+                path, md_info.get("material_names", [])
+            )
             if candidate not in texture_containers
         )
         if texture_containers:
-            texture_paths = extract_texture_containers(texture_containers, out_dir / f"{path.stem}_textures")
+            texture_paths = extract_texture_containers(
+                texture_containers, out_dir / f"{path.stem}_textures"
+            )
 
     records = md_info["records"]
     index_base = md_info["index_buffer_base"]
@@ -4862,11 +5136,15 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         ):
             continue
         mesh_name = mesh_name_for_export(md_info, record, skeleton_info)
-        material_name = material_name_for_mesh(md_info, mesh_name, record["index"], record, path.stem)
+        material_name = material_name_for_mesh(
+            md_info, mesh_name, record["index"], record, path.stem
+        )
         if material_name not in used_materials:
             texture = choose_texture(material_name, texture_paths, path.stem, mesh_name)
             if texture is None and prefer_material_refs:
-                texture = choose_texture_from_material_record(md_info, material_name, texture_paths, path.stem)
+                texture = choose_texture_from_material_record(
+                    md_info, material_name, texture_paths, path.stem
+                )
             used_materials[material_name] = texture
 
         vertex_offset = record["vertex_offset"]
@@ -4889,7 +5167,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
             positions.extend(position)
             texcoords.extend(read_uv0(g4mg, md_info, record, vertex_index))
             if color_offset is not None and off + color_offset + 4 <= len(g4mg):
-                vertex_colors.extend(value / 255.0 for value in g4mg[off + color_offset : off + color_offset + 4])
+                vertex_colors.extend(
+                    value / 255.0 for value in g4mg[off + color_offset : off + color_offset + 4]
+                )
             else:
                 vertex_colors.extend((1.0, 1.0, 1.0, 1.0))
 
@@ -4910,7 +5190,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
             skin_influences = read_skin_influences(g4mg, md_info, record)
             skin_mode = "vertex_weights"
             if joint_palette:
-                valid_influences, invalid_influences = skin_palette_fit(skin_influences, len(joint_palette))
+                valid_influences, invalid_influences = skin_palette_fit(
+                    skin_influences, len(joint_palette)
+                )
                 if invalid_influences > valid_influences:
                     skin_influences = rigid_skin_influences(vertex_count)
                     skin_mode = "rigid_invalid_palette_bytes"
@@ -4921,9 +5203,8 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         # embedded CRC table is the only stable relationship to the actor
         # skeleton; selecting a source G4SK by proximity swaps finger groups
         # on otherwise compatible body types.
-        crc_palette_is_authoritative = (
-            uniform_model
-            and path.stem.lower().startswith(("sk", "s", "g", "m", "n"))
+        crc_palette_is_authoritative = uniform_model and path.stem.lower().startswith(
+            ("sk", "s", "g", "m", "n")
         )
         hash_palette, hash_remap_count = remap_joint_palette_by_g4md_hashes(
             md_data,
@@ -4970,7 +5251,11 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         # Conversely, gloves can be compact CRC palettes even when their
         # physical indices happen to be near the mesh in bind pose.
         elif direct_palette_score <= 0.35:
-            if hash_palette is not None and hash_palette_score is not None and hash_palette_score < direct_palette_score:
+            if (
+                hash_palette is not None
+                and hash_palette_score is not None
+                and hash_palette_score < direct_palette_score
+            ):
                 joint_palette = hash_palette
                 palette_remap_count = hash_remap_count
                 palette_remap_source = "G4MD CRC32 joint table (spatially verified)"
@@ -4979,14 +5264,20 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
                 palette_remap_source = "physical target G4SK indices (spatially verified)"
                 palette_spatial_score = direct_palette_score
         elif uniform_model and len(joint_palette) > 1:
-            joint_palette, palette_remap_count, palette_remap_source, palette_spatial_score = choose_uniform_joint_palette(
-                joint_palette,
-                position_tuples,
-                skin_influences,
-                skeleton_info,
-                uniform_palette_sources,
+            joint_palette, palette_remap_count, palette_remap_source, palette_spatial_score = (
+                choose_uniform_joint_palette(
+                    joint_palette,
+                    position_tuples,
+                    skin_influences,
+                    skeleton_info,
+                    uniform_palette_sources,
+                )
             )
-            if hash_palette is not None and hash_palette_score is not None and hash_palette_score < palette_spatial_score:
+            if (
+                hash_palette is not None
+                and hash_palette_score is not None
+                and hash_palette_score < palette_spatial_score
+            ):
                 joint_palette = hash_palette
                 palette_remap_count = hash_remap_count
                 palette_remap_source = "G4MD CRC32 joint table (spatially verified)"
@@ -4999,7 +5290,11 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
                     palette_spatial_score = palette_spatial_error(
                         position_tuples, skin_influences, joint_palette, skeleton_info
                     )
-        elif hash_palette is not None and hash_palette_score is not None and hash_palette_score < direct_palette_score:
+        elif (
+            hash_palette is not None
+            and hash_palette_score is not None
+            and hash_palette_score < direct_palette_score
+        ):
             joint_palette = hash_palette
             palette_remap_count = hash_remap_count
             palette_remap_source = "G4MD CRC32 joint table (spatially verified)"
@@ -5011,7 +5306,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
                 )
                 palette_remap_source = "shared face skeleton order"
             else:
-                joint_palette, palette_remap_count = remap_assigned_joint_palette(joint_palette, skeleton_info)
+                joint_palette, palette_remap_count = remap_assigned_joint_palette(
+                    joint_palette, skeleton_info
+                )
                 palette_remap_source = "compact assigned skeleton order"
         joint_palette_override = face_rigid_joint_override(path, skeleton_info, joint_palette)
         if joint_palette_override is not None:
@@ -5061,7 +5358,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         "format": "level5-g4-native-mesh",
         "version": 1,
         "source": str(path),
-        "materials": {name: str(texture) if texture else None for name, texture in used_materials.items()},
+        "materials": {
+            name: str(texture) if texture else None for name, texture in used_materials.items()
+        },
         "meshes": [
             {
                 "name": payload["name"],
@@ -5104,11 +5403,11 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
             effects.append(
                 f'<effect id="{safe_mat}_effect"><profile_COMMON>'
                 f'<newparam sid="{safe_mat}_surface"><surface type="2D">'
-                f'<init_from>{safe_mat}_image</init_from></surface></newparam>'
+                f"<init_from>{safe_mat}_image</init_from></surface></newparam>"
                 f'<newparam sid="{safe_mat}_sampler"><sampler2D>'
-                f'<source>{safe_mat}_surface</source></sampler2D></newparam>'
+                f"<source>{safe_mat}_surface</source></sampler2D></newparam>"
                 f'<technique sid="common"><phong><diffuse><texture texture="{safe_mat}_sampler" texcoord="UVSET0"/>'
-                f'</diffuse></phong></technique></profile_COMMON></effect>'
+                f"</diffuse></phong></technique></profile_COMMON></effect>"
             )
         else:
             color = "0.75 0.75 0.75 1"
@@ -5176,7 +5475,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
             f'<bind_vertex_input semantic="UVSET0" input_semantic="TEXCOORD" input_set="0"/>'
             f"</instance_material></technique_common></bind_material>"
         )
-        controller = build_skin_controller(payload, skeleton_info) if skeleton_info is not None else None
+        controller = (
+            build_skin_controller(payload, skeleton_info) if skeleton_info is not None else None
+        )
         if controller is None:
             scene_nodes.append(
                 f'<node id="{gid}" name="{escape(payload["name"])}"><instance_geometry url="#{gid}_geo">'
@@ -5188,7 +5489,7 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
             skin_reports[payload["name"]] = skin_report
             scene_nodes.append(
                 f'<node id="{gid}" name="{escape(payload["name"])}"><instance_controller url="#{gid}_controller">'
-                f'<skeleton>#skeleton_root</skeleton>{bind_material}</instance_controller></node>'
+                f"<skeleton>#skeleton_root</skeleton>{bind_material}</instance_controller></node>"
             )
 
     skeleton_nodes = ""
@@ -5199,7 +5500,7 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">'
         "<asset><contributor><authoring_tool>g4_model_probe.py</authoring_tool></contributor>"
-        "<unit name=\"meter\" meter=\"1\"/><up_axis>Y_UP</up_axis></asset>"
+        '<unit name="meter" meter="1"/><up_axis>Y_UP</up_axis></asset>'
         f"<library_images>{''.join(images)}</library_images>"
         f"<library_effects>{''.join(effects)}</library_effects>"
         f"<library_materials>{''.join(materials)}</library_materials>"
@@ -5233,7 +5534,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         ],
         "material_records": enriched_material_records(md_info, texture_paths),
         "mesh_count": len(mesh_payloads),
-        "materials": {name: str(texture) if texture else None for name, texture in used_materials.items()},
+        "materials": {
+            name: str(texture) if texture else None for name, texture in used_materials.items()
+        },
         "vertex_layout": {
             "stride": "per mesh; low byte of record flags1",
             "position": "float3 @ 0x00",
@@ -5254,10 +5557,16 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
                 "material_index": payload["material_index"],
                 "material_or_lod": payload["material_or_lod"],
                 "material": payload["material"],
-                "texture": str(used_materials.get(payload["material"])) if used_materials.get(payload["material"]) else None,
+                "texture": str(used_materials.get(payload["material"]))
+                if used_materials.get(payload["material"])
+                else None,
                 "vertex_stride": f"0x{payload['vertex_stride']:x}",
-                "uv0_offset": None if payload["uv0_offset"] is None else f"0x{payload['uv0_offset']:x}",
-                "color_offset": None if payload["color_offset"] is None else f"0x{payload['color_offset']:x}",
+                "uv0_offset": None
+                if payload["uv0_offset"] is None
+                else f"0x{payload['uv0_offset']:x}",
+                "color_offset": None
+                if payload["color_offset"] is None
+                else f"0x{payload['color_offset']:x}",
                 "normal_source": payload["normal_source"],
                 "palette_offset": payload["palette_base"],
                 "palette_length": payload["palette_length"],
@@ -5289,7 +5598,9 @@ def export_dae(path: Path, out_dir: Path, extract_textures: bool = True) -> Path
         },
         "rigging": "exported when G4SK is available; local blend indices are remapped through the G4MD joint palette table",
     }
-    dae_path.with_suffix(".dae.report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    dae_path.with_suffix(".dae.report.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8"
+    )
     return dae_path
 
 
@@ -5337,10 +5648,18 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Probe Level-5 G4 model files.")
     parser.add_argument("paths", nargs="*", type=Path)
     parser.add_argument("--json", action="store_true", help="Emit JSON instead of compact text.")
-    parser.add_argument("--obj-dir", type=Path, help="Write probe OBJ files for geometry validation.")
+    parser.add_argument(
+        "--obj-dir", type=Path, help="Write probe OBJ files for geometry validation."
+    )
     parser.add_argument("--dae-dir", type=Path, help="Write preliminary Collada DAE files.")
-    parser.add_argument("--extract-g4tx", type=Path, help="Extract all textures from one G4TX into this directory.")
-    parser.add_argument("--build-skeleton-cache", type=Path, help="Build local parsed G4SK cache JSON from chara_model XML.")
+    parser.add_argument(
+        "--extract-g4tx", type=Path, help="Extract all textures from one G4TX into this directory."
+    )
+    parser.add_argument(
+        "--build-skeleton-cache",
+        type=Path,
+        help="Build local parsed G4SK cache JSON from chara_model XML.",
+    )
     parser.add_argument(
         "--export-model",
         action="store_true",

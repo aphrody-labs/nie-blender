@@ -14,9 +14,23 @@ from html import escape
 from pathlib import Path
 
 try:
-    from .g4mt_probe import companion_g4sk, crc32b, g4sk_name_table_offset, parse_g4mt, read_g4sk_data, u16
+    from .g4mt_probe import (
+        companion_g4sk,
+        crc32b,
+        g4sk_name_table_offset,
+        parse_g4mt,
+        read_g4sk_data,
+        u16,
+    )
 except ImportError:
-    from g4mt_probe import companion_g4sk, crc32b, g4sk_name_table_offset, parse_g4mt, read_g4sk_data, u16
+    from g4mt_probe import (
+        companion_g4sk,
+        crc32b,
+        g4sk_name_table_offset,
+        parse_g4mt,
+        read_g4sk_data,
+        u16,
+    )
 
 
 CHANNEL_PATHS = {
@@ -45,10 +59,22 @@ def rigid_inverse(matrix: list[float]) -> list[float]:
     r10, r11, r12, ty = matrix[4:8]
     r20, r21, r22, tz = matrix[8:12]
     return [
-        r00, r10, r20, -(r00 * tx + r10 * ty + r20 * tz),
-        r01, r11, r21, -(r01 * tx + r11 * ty + r21 * tz),
-        r02, r12, r22, -(r02 * tx + r12 * ty + r22 * tz),
-        0.0, 0.0, 0.0, 1.0,
+        r00,
+        r10,
+        r20,
+        -(r00 * tx + r10 * ty + r20 * tz),
+        r01,
+        r11,
+        r21,
+        -(r01 * tx + r11 * ty + r21 * tz),
+        r02,
+        r12,
+        r22,
+        -(r02 * tx + r12 * ty + r22 * tz),
+        0.0,
+        0.0,
+        0.0,
+        1.0,
     ]
 
 
@@ -84,7 +110,11 @@ def matrix_trs(matrix: list[float]) -> dict[str, list[float]]:
         divisor = scale[col] or 1.0
         for row in range(3):
             rotation_matrix[row * 4 + col] /= divisor
-    return {"translation": translation, "rotation": quaternion_from_matrix(rotation_matrix), "scale": scale}
+    return {
+        "translation": translation,
+        "rotation": quaternion_from_matrix(rotation_matrix),
+        "scale": scale,
+    }
 
 
 def trs_matrix(translation: list[float], rotation: list[float], scale: list[float]) -> list[float]:
@@ -103,7 +133,10 @@ def trs_matrix(translation: list[float], rotation: list[float], scale: list[floa
         (2.0 * (y * z + x * w)) * sy,
         (1.0 - 2.0 * (x * x + y * y)) * sz,
         translation[2],
-        0.0, 0.0, 0.0, 1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
     ]
 
 
@@ -116,25 +149,40 @@ def parse_skeleton(path: Path) -> dict:
     global_matrices = []
     for index in range(count):
         values = struct.unpack_from("<12f", data, 0x40 + index * 0x30)
-        global_matrices.append([
-            values[0], values[1], values[2], values[3],
-            values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11],
-            0.0, 0.0, 0.0, 1.0,
-        ])
+        global_matrices.append(
+            [
+                values[0],
+                values[1],
+                values[2],
+                values[3],
+                values[4],
+                values[5],
+                values[6],
+                values[7],
+                values[8],
+                values[9],
+                values[10],
+                values[11],
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+            ]
+        )
     parents = [u16(data, sections[3] + index * 2) for index in range(count)]
     name_table = g4sk_name_table_offset(data, count)
     names = []
     for index in range(count):
         offset = u16(data, name_table + index * 2)
         end = data.find(b"\0", name_table + offset)
-        names.append(data[name_table + offset:end].decode("utf-8", errors="replace"))
+        names.append(data[name_table + offset : end].decode("utf-8", errors="replace"))
     local_matrices = []
     for index, matrix in enumerate(global_matrices):
         parent = parents[index]
         local_matrices.append(
             matrix_mul(rigid_inverse(global_matrices[parent]), matrix)
-            if parent < count and parent != index else matrix
+            if parent < count and parent != index
+            else matrix
         )
     return {
         "path": str(path),
@@ -167,7 +215,9 @@ def slerp(a: list[float], b: list[float], amount: float) -> list[float]:
     return [x * left + y * right for x, y in zip(a, b)]
 
 
-def decode_key(data: bytes, data_base: int, channel: dict, scale: float, key_index: int) -> list[float]:
+def decode_key(
+    data: bytes, data_base: int, channel: dict, scale: float, key_index: int
+) -> list[float]:
     encoding = channel["encoding"]
     component_count = encoding[4]
     offset = data_base + channel["data_offset"] + key_index * encoding[5]
@@ -193,7 +243,9 @@ def decode_key(data: bytes, data_base: int, channel: dict, scale: float, key_ind
     raise ValueError(f"unsupported G4MT codec {codec}/{variant}: {encoding}")
 
 
-def sample_channel(data: bytes, data_base: int, channel: dict, scale: float, frame: float) -> list[float]:
+def sample_channel(
+    data: bytes, data_base: int, channel: dict, scale: float, frame: float
+) -> list[float]:
     keys = channel["keys"]
     if not keys:
         return []
@@ -270,10 +322,12 @@ def decode_motion(path: Path, clip_selector: str, skeleton_path: Path | None) ->
         raise ValueError("additive G4MT clips need a base pose and are not exported yet")
     data = path.read_bytes()
     target_hashes = {int(target["crc32b"], 16) for target in parsed["targets"]}
-    skeleton_file = skeleton_path or (Path(parsed["skeleton"]) if parsed["skeleton"] else companion_g4sk(path, target_hashes))
+    skeleton_file = skeleton_path or (
+        Path(parsed["skeleton"]) if parsed["skeleton"] else companion_g4sk(path, target_hashes)
+    )
     skeleton = parse_skeleton(skeleton_file) if skeleton_file and skeleton_file.is_file() else None
     target_infos = parsed["target_infos"][
-        clip["target_info_start"]:clip["target_info_start"] + clip["target_info_count"]
+        clip["target_info_start"] : clip["target_info_start"] + clip["target_info_count"]
     ]
     fps = clip["fps"] or 60
     frames = list(range(clip["start_frame"], clip["end_frame"] + 1))
@@ -282,12 +336,18 @@ def decode_motion(path: Path, clip_selector: str, skeleton_path: Path | None) ->
     for info in target_infos:
         target = parsed["targets"][info["target_index"]]
         skeleton_index = None
-        rest = {"scale": [1.0, 1.0, 1.0], "rotation": [0.0, 0.0, 0.0, 1.0], "translation": [0.0, 0.0, 0.0]}
+        rest = {
+            "scale": [1.0, 1.0, 1.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "translation": [0.0, 0.0, 0.0],
+        }
         if skeleton:
             skeleton_index = skeleton["hash_to_index"].get(int(target["crc32b"], 16))
             if skeleton_index is not None:
                 rest = skeleton["local_trs"][skeleton_index]
-        channels = parsed["channels"][info["channel_start"]:info["channel_start"] + info["channel_count"]]
+        channels = parsed["channels"][
+            info["channel_start"] : info["channel_start"] + info["channel_count"]
+        ]
         values = {path_name: [] for path_name in ("scale", "rotation", "translation")}
         animated_paths = set()
         for frame in frames:
@@ -298,7 +358,9 @@ def decode_motion(path: Path, clip_selector: str, skeleton_path: Path | None) ->
                     continue
                 path_name, component = mapping
                 scale = parsed["scales"][channel["encoding"][6]]
-                decoded = sample_channel(data, parsed["section_offsets"]["data"], channel, scale, frame)
+                decoded = sample_channel(
+                    data, parsed["section_offsets"]["data"], channel, scale, frame
+                )
                 if component is None:
                     pose[path_name] = normalize_quaternion(decoded)
                 else:
@@ -311,14 +373,16 @@ def decode_motion(path: Path, clip_selector: str, skeleton_path: Path | None) ->
                     if sum(a * b for a, b in zip(previous, value)) < 0.0:
                         value = [-component for component in value]
                 values[path_name].append(value)
-        tracks.append({
-            "target_index": info["target_index"],
-            "target_hash": target["crc32b"],
-            "target_name": target["name"],
-            "skeleton_index": skeleton_index,
-            "animated_paths": sorted(animated_paths),
-            "values": values,
-        })
+        tracks.append(
+            {
+                "target_index": info["target_index"],
+                "target_hash": target["crc32b"],
+                "target_name": target["name"],
+                "skeleton_index": skeleton_index,
+                "animated_paths": sorted(animated_paths),
+                "values": values,
+            }
+        )
     return {
         "source": str(path),
         "skeleton": skeleton,
@@ -332,7 +396,9 @@ def decode_motion(path: Path, clip_selector: str, skeleton_path: Path | None) ->
 def write_json(motion: dict, output: Path) -> None:
     payload = dict(motion)
     if payload["skeleton"]:
-        payload["skeleton"] = {key: value for key, value in payload["skeleton"].items() if key != "hash_to_index"}
+        payload["skeleton"] = {
+            key: value for key, value in payload["skeleton"].items() if key != "hash_to_index"
+        }
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -350,7 +416,12 @@ class GltfBuffer:
         self.data.extend(struct.pack(f"<{len(flat)}f", *flat))
         view = len(self.views)
         self.views.append({"buffer": 0, "byteOffset": offset, "byteLength": len(flat) * 4})
-        accessor = {"bufferView": view, "componentType": 5126, "count": len(flat) // components, "type": {1: "SCALAR", 3: "VEC3", 4: "VEC4"}[components]}
+        accessor = {
+            "bufferView": view,
+            "componentType": 5126,
+            "count": len(flat) // components,
+            "type": {1: "SCALAR", 3: "VEC3", 4: "VEC4"}[components],
+        }
         if components == 1 and flat:
             accessor["min"] = [min(flat)]
             accessor["max"] = [max(flat)]
@@ -389,21 +460,35 @@ def write_gltf(motion: dict, output: Path) -> None:
             components = 4 if path_name == "rotation" else 3
             output_accessor = binary.accessor(track["values"][path_name], components)
             sampler_index = len(samplers)
-            samplers.append({"input": time_accessor, "output": output_accessor, "interpolation": "LINEAR"})
-            animation_channels.append({"sampler": sampler_index, "target": {"node": node_index, "path": path_name}})
+            samplers.append(
+                {"input": time_accessor, "output": output_accessor, "interpolation": "LINEAR"}
+            )
+            animation_channels.append(
+                {"sampler": sampler_index, "target": {"node": node_index, "path": path_name}}
+            )
 
     document = {
         "asset": {"version": "2.0", "generator": "LEVEL 5 ENGINE G4MT research tools"},
         "scene": 0,
         "scenes": [{"nodes": roots}],
         "nodes": nodes,
-        "animations": [{"name": motion["clip"]["name"], "samplers": samplers, "channels": animation_channels}],
-        "buffers": [{"byteLength": len(binary.data), "uri": "data:application/octet-stream;base64," + base64.b64encode(binary.data).decode("ascii")}],
+        "animations": [
+            {"name": motion["clip"]["name"], "samplers": samplers, "channels": animation_channels}
+        ],
+        "buffers": [
+            {
+                "byteLength": len(binary.data),
+                "uri": "data:application/octet-stream;base64,"
+                + base64.b64encode(binary.data).decode("ascii"),
+            }
+        ],
         "bufferViews": binary.views,
         "accessors": binary.accessors,
         "extras": {"g4mtSource": motion["source"], "g4skSource": skeleton["path"]},
     }
-    output.write_text(json.dumps(document, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    output.write_text(
+        json.dumps(document, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
+    )
 
 
 def dae_floats(values: list[float] | list[list[float]]) -> str:
@@ -437,7 +522,7 @@ def write_dae(motion: dict, output: Path) -> None:
         return (
             f'<node id="joint_{index:03d}" sid="{escape(name)}" name="{escape(name)}" type="JOINT">'
             f'<matrix sid="transform">{dae_floats(matrix)}</matrix>'
-            f'{"".join(joint_xml(child) for child in children[index])}</node>'
+            f"{''.join(joint_xml(child) for child in children[index])}</node>"
         )
 
     animations = []
@@ -455,15 +540,15 @@ def write_dae(motion: dict, output: Path) -> None:
         animations.append(
             f'<animation id="{animation_id}" name="{animation_id}">'
             f'<source id="{animation_id}_input"><float_array id="{animation_id}_input_array" count="{count}">'
-            f'{dae_floats(motion["times"])}</float_array><technique_common>'
+            f"{dae_floats(motion['times'])}</float_array><technique_common>"
             f'<accessor source="#{animation_id}_input_array" count="{count}" stride="1">'
             f'<param name="TIME" type="float"/></accessor></technique_common></source>'
             f'<source id="{animation_id}_output"><float_array id="{animation_id}_output_array" count="{count * 16}">'
-            f'{dae_floats(matrices)}</float_array><technique_common>'
+            f"{dae_floats(matrices)}</float_array><technique_common>"
             f'<accessor source="#{animation_id}_output_array" count="{count}" stride="16">'
             f'<param name="TRANSFORM" type="float4x4"/></accessor></technique_common></source>'
             f'<source id="{animation_id}_interpolation"><Name_array id="{animation_id}_interpolation_array" count="{count}">'
-            f'{" ".join(["LINEAR"] * count)}</Name_array><technique_common>'
+            f"{' '.join(['LINEAR'] * count)}</Name_array><technique_common>"
             f'<accessor source="#{animation_id}_interpolation_array" count="{count}" stride="1">'
             f'<param name="INTERPOLATION" type="name"/></accessor></technique_common></source>'
             f'<sampler id="{animation_id}_sampler">'
@@ -471,7 +556,7 @@ def write_dae(motion: dict, output: Path) -> None:
             f'<input semantic="OUTPUT" source="#{animation_id}_output"/>'
             f'<input semantic="INTERPOLATION" source="#{animation_id}_interpolation"/>'
             f'</sampler><channel source="#{animation_id}_sampler" target="joint_{joint_index:03d}/transform"/>'
-            f'</animation>'
+            f"</animation>"
         )
 
     clip_name = escape(motion["clip"]["name"])
@@ -484,11 +569,11 @@ def write_dae(motion: dict, output: Path) -> None:
     document = (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">'
-        '<asset><contributor><authoring_tool>LEVEL 5 ENGINE G4MT research tools</authoring_tool></contributor>'
+        "<asset><contributor><authoring_tool>LEVEL 5 ENGINE G4MT research tools</authoring_tool></contributor>"
         '<unit name="meter" meter="1"/><up_axis>Y_UP</up_axis></asset>'
-        f'<library_animations>{"".join(animations)}</library_animations>'
+        f"<library_animations>{''.join(animations)}</library_animations>"
         f'<library_animation_clips><animation_clip id="clip_000" name="{clip_name}" start="{start:.9g}" end="{end:.9g}">'
-        f'{animation_instances}</animation_clip></library_animation_clips>'
+        f"{animation_instances}</animation_clip></library_animation_clips>"
         f'<library_visual_scenes><visual_scene id="Scene" name="Scene">'
         f'<node id="skeleton_root" name="skeleton_root">{"".join(joint_xml(root) for root in roots)}</node>'
         f'</visual_scene></library_visual_scenes><scene><instance_visual_scene url="#Scene"/></scene></COLLADA>\n'
@@ -508,12 +593,18 @@ def main() -> None:
 
     if args.list:
         for clip in parse_g4mt(args.g4mt, args.skeleton)["clips"]:
-            print(f"{clip['index']:4d}  {clip['start_frame']:5d}-{clip['end_frame']:<5d}  {clip['fps']:3d} fps  {clip['name']}")
+            print(
+                f"{clip['index']:4d}  {clip['start_frame']:5d}-{clip['end_frame']:<5d}  {clip['fps']:3d} fps  {clip['name']}"
+            )
         return
-    output_format = args.format or (args.output.suffix.lstrip(".").lower() if args.output else "json")
+    output_format = args.format or (
+        args.output.suffix.lstrip(".").lower() if args.output else "json"
+    )
     if output_format not in {"json", "gltf", "dae"}:
         raise ValueError(f"cannot infer output format from .{output_format}; use --format")
-    output = args.output or args.g4mt.with_name(f"{args.g4mt.stem}_clip_{args.clip}.{output_format}")
+    output = args.output or args.g4mt.with_name(
+        f"{args.g4mt.stem}_clip_{args.clip}.{output_format}"
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     motion = decode_motion(args.g4mt, args.clip, args.skeleton)
     if output_format == "json":

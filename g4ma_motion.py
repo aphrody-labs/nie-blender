@@ -36,11 +36,13 @@ def decode_material_motion(path: Path, clip_selector: str) -> dict:
     fps = clip["fps"] or 60
     tracks = []
     target_infos = parsed["target_infos"][
-        clip["target_info_start"]:clip["target_info_start"] + clip["target_info_count"]
+        clip["target_info_start"] : clip["target_info_start"] + clip["target_info_count"]
     ]
     for info in target_infos:
         target = parsed["targets"][info["target_index"]]
-        channels = parsed["channels"][info["channel_start"]:info["channel_start"] + info["channel_count"]]
+        channels = parsed["channels"][
+            info["channel_start"] : info["channel_start"] + info["channel_count"]
+        ]
         curves = []
         for channel in channels:
             scale_index = channel["encoding"][6]
@@ -56,19 +58,23 @@ def decode_material_motion(path: Path, clip_selector: str) -> dict:
                 )
                 for frame in frames
             ]
-            curves.append({
-                "channel_index": channel["index"],
-                "channel_type": channel["channel_type"],
-                "encoding": channel["encoding"],
-                "keys": channel["keys"],
-                "interpolation": "STEP" if encoding_step(channel) else "LINEAR",
-                "values": values,
-            })
-        tracks.append({
-            "target_index": info["target_index"],
-            "target_hash": target["crc32b"],
-            "curves": curves,
-        })
+            curves.append(
+                {
+                    "channel_index": channel["index"],
+                    "channel_type": channel["channel_type"],
+                    "encoding": channel["encoding"],
+                    "keys": channel["keys"],
+                    "interpolation": "STEP" if encoding_step(channel) else "LINEAR",
+                    "values": values,
+                }
+            )
+        tracks.append(
+            {
+                "target_index": info["target_index"],
+                "target_hash": target["crc32b"],
+                "curves": curves,
+            }
+        )
     return {
         "source": str(path),
         "clip": clip,
@@ -84,7 +90,10 @@ def main() -> None:
     parser.add_argument("clip", help="Clip name or zero-based index")
     parser.add_argument("--output", type=Path, help="Write JSON to this path instead of stdout")
     args = parser.parse_args()
-    payload = json.dumps(decode_material_motion(args.g4ma, args.clip), ensure_ascii=False, indent=2) + "\n"
+    payload = (
+        json.dumps(decode_material_motion(args.g4ma, args.clip), ensure_ascii=False, indent=2)
+        + "\n"
+    )
     if args.output:
         args.output.write_text(payload, encoding="utf-8")
     else:

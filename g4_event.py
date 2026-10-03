@@ -32,7 +32,7 @@ def raw_cfg_records(path: Path) -> list[tuple[int, list[object]]]:
         entry_hash, value_count = struct.unpack_from("<IB", data, pos)
         pos += 5
         type_bytes = (value_count + 3) // 4
-        packed_types = data[pos:pos + type_bytes]
+        packed_types = data[pos : pos + type_bytes]
         pos = (pos + type_bytes + 3) & ~3
         values = struct.unpack_from(f"<{value_count}i", data, pos) if value_count else ()
         pos += value_count * 4
@@ -72,10 +72,7 @@ def event_command_entries_from_binary(path: Path) -> list[dict]:
     return [
         {
             "Name": names.get(entry_hash, f"0x{entry_hash:08x}"),
-            "Values": [
-                {"Index": index, "Value": value}
-                for index, value in enumerate(values)
-            ],
+            "Values": [{"Index": index, "Value": value} for index, value in enumerate(values)],
         }
         for entry_hash, values in raw_cfg_records(path)
     ]
@@ -145,7 +142,9 @@ def actor_points_from_entries(entries: list[dict]) -> dict[str, str]:
     return points
 
 
-def actor_point_assignments_from_entries(entries: list[dict]) -> dict[str, dict[str, tuple[str, str]]]:
+def actor_point_assignments_from_entries(
+    entries: list[dict],
+) -> dict[str, dict[str, tuple[str, str]]]:
     """Resolve per-cut point attachments, including Victory Road's TYPE templates."""
     assignments: dict[str, dict[str, tuple[str, str]]] = {}
     command = None
@@ -200,7 +199,10 @@ def point_assignment_for_actor(
     for candidate in (actor, base):
         if candidate in candidates:
             return candidates[candidate]
-    return next((value for pattern, value in candidates.items() if fnmatch.fnmatchcase(actor, pattern)), None)
+    return next(
+        (value for pattern, value in candidates.items() if fnmatch.fnmatchcase(actor, pattern)),
+        None,
+    )
 
 
 def actor_points_from_raw_records(path: Path) -> dict[str, str]:

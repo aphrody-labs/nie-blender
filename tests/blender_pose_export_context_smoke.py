@@ -22,6 +22,7 @@ print("PORT_ADDON", port.__file__)
 for obj in tuple(bpy.data.objects):
     bpy.data.objects.remove(obj, do_unlink=True)
 
+
 def add_mesh(name, offset):
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata([(offset, 0, 0), (offset + 1, 0, 0), (offset, 1, 0)], [], [(0, 1, 2)])
@@ -50,8 +51,16 @@ def add_posed_armature(mesh):
 
 def exported_position_x_range(path):
     root = ET.parse(path).getroot()
-    geometry = next(item for item in root.findall(".//{*}geometry") if "pose_export_test_mesh_a" in item.attrib.get("name", ""))
-    array = next(item for item in geometry.findall(".//{*}float_array") if "positions" in item.attrib.get("id", ""))
+    geometry = next(
+        item
+        for item in root.findall(".//{*}geometry")
+        if "pose_export_test_mesh_a" in item.attrib.get("name", "")
+    )
+    array = next(
+        item
+        for item in geometry.findall(".//{*}float_array")
+        if "positions" in item.attrib.get("id", "")
+    )
     values = [float(value) for value in array.text.split()]
     return min(values[0::3]), max(values[0::3])
 
@@ -84,5 +93,7 @@ assert obj.select_get(), "Original mesh selection was not restored"
 assert bpy.context.view_layer.objects.active is obj, "Original active object was not restored"
 assert non_armature_modifier.show_viewport, "Source modifiers were changed by temporary export"
 low_x, high_x = exported_position_x_range(dae_path)
-assert low_x > 1.5 and high_x > 2.5, f"Posed vertices were not baked into the DAE: x=[{low_x}, {high_x}]"
+assert low_x > 1.5 and high_x > 2.5, (
+    f"Posed vertices were not baked into the DAE: x=[{low_x}, {high_x}]"
+)
 print("POSE_EXPORT_CONTEXT_SMOKE_OK")

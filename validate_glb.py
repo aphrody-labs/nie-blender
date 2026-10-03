@@ -30,14 +30,14 @@ def main():
         import bpy  # type: ignore
 
         # Nettoyer la scene par defaut
-        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.select_all(action="SELECT")
         bpy.ops.object.delete()
 
         # Importer le GLB
         bpy.ops.import_scene.gltf(filepath=glb_path)
 
         # Verifier qu'au moins un objet a ete importe
-        objects = [obj for obj in bpy.data.objects if obj.type == 'MESH']
+        objects = [obj for obj in bpy.data.objects if obj.type == "MESH"]
         if not objects:
             print(f"AVERTISSEMENT: aucun mesh importe depuis {glb_path}")
             sys.exit(1)

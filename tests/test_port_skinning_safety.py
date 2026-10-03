@@ -40,8 +40,12 @@ class PortSkinningSafetyTests(unittest.TestCase):
         self.assertEqual(PORT.compact_joint_index("spine02", native_joint_indices=indices), 4)
 
     def test_compact_joint_index_uses_the_editable_alias_catalog(self):
-        self.assertEqual(PORT.compact_joint_index("spine01"), PORT.COMPACT_JOINT_NAMES.index("c_c_1_1"))
-        self.assertEqual(PORT.compact_joint_index("r_index03"), PORT.COMPACT_JOINT_NAMES.index("r_idx_1_2"))
+        self.assertEqual(
+            PORT.compact_joint_index("spine01"), PORT.COMPACT_JOINT_NAMES.index("c_c_1_1")
+        )
+        self.assertEqual(
+            PORT.compact_joint_index("r_index03"), PORT.COMPACT_JOINT_NAMES.index("r_idx_1_2")
+        )
 
     def test_native_palette_uses_skinning_ancestor_for_helper_joints(self):
         indices = {
@@ -59,9 +63,7 @@ class PortSkinningSafetyTests(unittest.TestCase):
 
     def test_root_alias_uses_the_native_pelvis_entry_when_global_is_not_in_the_palette(self):
         indices = {"c_global_0_0": 2, "c_c_1_0": 3}
-        vertex = PORT.Vertex(
-            (0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0), (("root", 1.0),)
-        )
+        vertex = PORT.Vertex((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0), (("root", 1.0),))
         resolved, unresolved = PORT.resolve_vertex_influences(vertex, [3], None, {}, indices)
         self.assertEqual((resolved, unresolved), ([(0, 1.0)], 0))
 
@@ -76,7 +78,9 @@ class PortSkinningSafetyTests(unittest.TestCase):
         mesh = PORT.Mesh("body", [vertex], [0, 0, 0], 0, "body")
         rule = PORT.RecordRule("body", "body", ["body"], auto_palette=True)
         self.assertEqual(
-            PORT.configured_record_palettes([[3, 8]], [rule], [mesh], {"l_hand": "l_wph_1_0"}, indices),
+            PORT.configured_record_palettes(
+                [[3, 8]], [rule], [mesh], {"l_hand": "l_wph_1_0"}, indices
+            ),
             [[3, 8]],
         )
 
@@ -136,18 +140,45 @@ class PortSkinningSafetyTests(unittest.TestCase):
             native_joint_indices={"l_a_1_0": 6, "c_c_1_1": 4},
             joint_aliases={"l_arm": "l_a_1_0"},
             joint_position_transforms={
-                "l_a_1_0": (1.0, 0.0, 0.0, 0.5, 0.0, 1.0, 0.0, -0.25, 0.0, 0.0, 1.0, 0.125, 0.0, 0.0, 0.0, 1.0),
+                "l_a_1_0": (
+                    1.0,
+                    0.0,
+                    0.0,
+                    0.5,
+                    0.0,
+                    1.0,
+                    0.0,
+                    -0.25,
+                    0.0,
+                    0.0,
+                    1.0,
+                    0.125,
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0,
+                ),
             },
         )
         self.assertEqual(struct.unpack_from("<3f", payload, 0), (1.5, 1.75, 3.125))
         self.assertEqual(struct.unpack_from("<3f", payload, 0x44), (4.0, 5.0, 6.0))
 
     def test_analyze_port_reports_unresolved_influences_at_top_level(self):
-        config = PORT.PortConfig(Path("chr/test/test.g4md"), ["mat"], [PORT.RecordRule("native", "mat", ["*"])], {})
+        config = PORT.PortConfig(
+            Path("chr/test/test.g4md"), ["mat"], [PORT.RecordRule("native", "mat", ["*"])], {}
+        )
         original_prepare = PORT.prepare_port_geometry
         try:
-            PORT.prepare_port_geometry = lambda *args, **kwargs: ([], [], [[0]], [[0]], [{"unresolved_influences": 3}])
-            report = PORT.analyze_port(None, Path("/tmp/raw"), config, chara_model=Path("/tmp/no-chara-model.xml"))
+            PORT.prepare_port_geometry = lambda *args, **kwargs: (
+                [],
+                [],
+                [[0]],
+                [[0]],
+                [{"unresolved_influences": 3}],
+            )
+            report = PORT.analyze_port(
+                None, Path("/tmp/raw"), config, chara_model=Path("/tmp/no-chara-model.xml")
+            )
             self.assertEqual(report["unresolved_influences"], 3)
         finally:
             PORT.prepare_port_geometry = original_prepare
@@ -155,11 +186,23 @@ class PortSkinningSafetyTests(unittest.TestCase):
     def test_write_port_rejects_unresolved_influences_even_when_not_strict(self):
         vertex = PORT.Vertex((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0))
         mesh = PORT.Mesh("native", [vertex, vertex, vertex], [0, 1, 2], 0, "mat")
-        config = PORT.PortConfig(Path("chr/test/test.g4md"), ["mat"], [PORT.RecordRule("native", "mat", ["*"])], {}, strict_skinning=False)
+        config = PORT.PortConfig(
+            Path("chr/test/test.g4md"),
+            ["mat"],
+            [PORT.RecordRule("native", "mat", ["*"])],
+            {},
+            strict_skinning=False,
+        )
         original_prepare = PORT.prepare_port_geometry
         original_build = PORT.build_g4mg
         try:
-            PORT.prepare_port_geometry = lambda *args, **kwargs: ([mesh], [mesh], [[0]], [[0]], [{"unresolved_influences": 1}])
+            PORT.prepare_port_geometry = lambda *args, **kwargs: (
+                [mesh],
+                [mesh],
+                [[0]],
+                [[0]],
+                [{"unresolved_influences": 1}],
+            )
             PORT.build_g4mg = lambda *args, **kwargs: (b"", [{"unresolved_influences": 1}])
             with self.assertRaisesRegex(ValueError, "1 skin influences"):
                 PORT.write_port(None, Path("/tmp/raw"), Path("/tmp/out"), config)
@@ -172,10 +215,14 @@ class PortSkinningSafetyTests(unittest.TestCase):
         body = PORT.Mesh("body_mesh", [vertex, vertex, vertex], [0, 1, 2], 0, "body")
         hair = PORT.Mesh("hair_mesh", [vertex, vertex, vertex], [0, 1, 2], 0, "hair")
         config = PORT.PortConfig(
-            Path("chr/test/test.g4md"), ["mat"], [
+            Path("chr/test/test.g4md"),
+            ["mat"],
+            [
                 PORT.RecordRule("body", "mat", ["body_mesh"]),
                 PORT.RecordRule("hair", "mat", ["*"]),
-            ], {}, source_mesh_assignments={"hair mesh": "body"},
+            ],
+            {},
+            source_mesh_assignments={"hair mesh": "body"},
         )
         merged = PORT.merged_native_meshes([body, hair], config)
         self.assertEqual(merged[0].source_names, ("body_mesh", "hair_mesh"))
@@ -215,9 +262,7 @@ class PortSkinningSafetyTests(unittest.TestCase):
         self.assertEqual(tuple(packed[0x3C:0x40]), (255, 0, 191, 127))
 
     def test_source_vertex_color_overrides_the_native_fallback(self):
-        vertex = PORT.Vertex(
-            (0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0), color=(12, 34, 56, 78)
-        )
+        vertex = PORT.Vertex((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0), color=(12, 34, 56, 78))
         packed = PORT.pack_vertex(vertex, fallback_color=(255, 0, 191, 127))
         self.assertEqual(tuple(packed[0x3C:0x40]), (12, 34, 56, 78))
 
@@ -241,7 +286,7 @@ class PortSkinningSafetyTests(unittest.TestCase):
         vertex = PORT.Vertex((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0))
         payload, records = PORT.build_g4mg([PORT.Mesh("native", [vertex], [0, 0, 0], 0, "mat")])
         vertex_size = records[0]["vertex_buffer_size"]
-        index_data = payload[records[0]["index_base"]:records[0]["index_base"] + 6]
+        index_data = payload[records[0]["index_base"] : records[0]["index_base"] + 6]
         legacy_payload = bytearray(payload[:vertex_size])
         legacy_payload.extend(index_data)
         while len(legacy_payload) % 0x10:
@@ -251,19 +296,29 @@ class PortSkinningSafetyTests(unittest.TestCase):
         struct.pack_into("<I", legacy_md, 0x54, len(index_data))
         struct.pack_into("<I", legacy_md, 0x5C, vertex_size)
 
-        repaired_md, repaired_payload = PORT.realign_g4mg_index_buffer(bytes(legacy_md), bytes(legacy_payload))
+        repaired_md, repaired_payload = PORT.realign_g4mg_index_buffer(
+            bytes(legacy_md), bytes(legacy_payload)
+        )
 
         repaired_index_base = struct.unpack_from("<I", repaired_md, 0x5C)[0]
         self.assertEqual(repaired_index_base % 0x40, 0)
         self.assertEqual(len(repaired_payload) % 0x40, 0)
-        self.assertEqual(repaired_payload[repaired_index_base:repaired_index_base + 6], index_data)
+        self.assertEqual(
+            repaired_payload[repaired_index_base : repaired_index_base + 6], index_data
+        )
 
     def test_native_vertex_color_transfer_preserves_authored_source_colors(self):
         generated = PORT.Mesh(
             "native",
             [
                 PORT.Vertex((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0)),
-                PORT.Vertex((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 0.0), color=(1, 2, 3, 4), color_from_source=True),
+                PORT.Vertex(
+                    (1.0, 0.0, 0.0),
+                    (0.0, 1.0, 0.0),
+                    (1.0, 0.0),
+                    color=(1, 2, 3, 4),
+                    color_from_source=True,
+                ),
             ],
             [0, 1, 1],
             0,
@@ -289,7 +344,10 @@ class PortSkinningSafetyTests(unittest.TestCase):
             PORT.rebuild_native_g4tx_with_custom_textures(template, Path(temporary), output, {})
             _, template_entries, template_payloads = PORT.parse_g4tx_payloads(template)
             _, output_entries, output_payloads = PORT.parse_g4tx_payloads(output)
-            self.assertEqual([entry["name"] for entry in output_entries], [entry["name"] for entry in template_entries])
+            self.assertEqual(
+                [entry["name"] for entry in output_entries],
+                [entry["name"] for entry in template_entries],
+            )
             self.assertEqual(output_payloads, template_payloads)
             self.assertEqual(output.read_bytes(), template.read_bytes())
 

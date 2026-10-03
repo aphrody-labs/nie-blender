@@ -92,13 +92,15 @@ def parse_g4cm(path: Path) -> dict:
         )
         if target_index >= target_count:
             raise ValueError(f"target-info {index} refers to missing target {target_index}")
-        target_infos.append({
-            "index": index,
-            "target_index": target_index,
-            "channel_start": channel_low + (channel_high << 16),
-            "channel_count": channel_count,
-            "reserved": reserved,
-        })
+        target_infos.append(
+            {
+                "index": index,
+                "target_index": target_index,
+                "channel_start": channel_low + (channel_high << 16),
+                "channel_count": channel_count,
+                "reserved": reserved,
+            }
+        )
 
     channel_count = max(
         (info["channel_start"] + info["channel_count"] for info in target_infos),
@@ -119,31 +121,37 @@ def parse_g4cm(path: Path) -> dict:
 
     all_keys = list(struct.unpack_from(f"<{key_count}H", data, key_offset)) if key_count else []
     channels = []
-    for index, (encoding, key_start, entry_data_offset, entry_key_count) in enumerate(channel_headers):
-        channels.append({
-            "index": index,
-            "channel_type": encoding[0],
-            "encoding": encoding,
-            "key_start": key_start,
-            "data_offset": entry_data_offset,
-            "key_count": entry_key_count,
-            "keys": all_keys[key_start:key_start + entry_key_count],
-        })
+    for index, (encoding, key_start, entry_data_offset, entry_key_count) in enumerate(
+        channel_headers
+    ):
+        channels.append(
+            {
+                "index": index,
+                "channel_type": encoding[0],
+                "encoding": encoding,
+                "key_start": key_start,
+                "data_offset": entry_data_offset,
+                "key_count": entry_key_count,
+                "keys": all_keys[key_start : key_start + entry_key_count],
+            }
+        )
 
     clips = []
     for index, row in enumerate(clip_rows):
-        clips.append({
-            "index": index,
-            "name": clip_names[index],
-            "crc32b": f"{clip_hashes[index]:08x}",
-            "start_frame": row[0],
-            "end_frame": row[1],
-            "frame_count": row[1] - row[0] + 1,
-            "flags": row[4],
-            "fps": row[5],
-            "target_info_start": row[2] + (row[6] << 16),
-            "target_info_count": row[3],
-        })
+        clips.append(
+            {
+                "index": index,
+                "name": clip_names[index],
+                "crc32b": f"{clip_hashes[index]:08x}",
+                "start_frame": row[0],
+                "end_frame": row[1],
+                "frame_count": row[1] - row[0] + 1,
+                "flags": row[4],
+                "fps": row[5],
+                "target_info_start": row[2] + (row[6] << 16),
+                "target_info_count": row[3],
+            }
+        )
 
     return {
         "source": str(path),
@@ -212,13 +220,13 @@ def decode_camera(path: Path, clip_selector: str) -> dict:
     if clip["flags"]:
         raise ValueError(f"unsupported G4CM clip flags: {clip['flags']:#x}")
     infos = parsed["target_infos"][
-        clip["target_info_start"]:clip["target_info_start"] + clip["target_info_count"]
+        clip["target_info_start"] : clip["target_info_start"] + clip["target_info_count"]
     ]
     if len(infos) != 1:
         raise ValueError(f"G4CM clip must contain one camera target, found {len(infos)}")
     info = infos[0]
     channels = parsed["channels"][
-        info["channel_start"]:info["channel_start"] + info["channel_count"]
+        info["channel_start"] : info["channel_start"] + info["channel_count"]
     ]
     if {channel["channel_type"] for channel in channels} != set(CHANNEL_PATHS):
         raise ValueError("G4CM clip does not contain the expected eight camera channels")

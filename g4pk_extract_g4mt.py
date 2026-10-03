@@ -51,7 +51,7 @@ def g4mt_entries(data: bytes) -> list[tuple[str, int, int]]:
     return [
         (name, offset, size)
         for name, offset, size in entries(data)
-        if data[offset:offset + 4] == b"G4MT"
+        if data[offset : offset + 4] == b"G4MT"
     ]
 
 
@@ -68,22 +68,30 @@ def select_g4mt_entry(data: bytes, selector: str = "0") -> tuple[str, bytes]:
         normalized = selector.replace("\\", "/").lower()
         for candidate in candidates:
             name = candidate[0].replace("\\", "/").lower()
-            if name == normalized or Path(name).name == Path(normalized).name or Path(name).stem == normalized:
+            if (
+                name == normalized
+                or Path(name).name == Path(normalized).name
+                or Path(name).stem == normalized
+            ):
                 selected = candidate
                 break
     if selected is None:
         names = ", ".join(name for name, _, _ in candidates[:8])
         raise ValueError(f"G4MT entry not found: {selector}; available: {names}")
     name, offset, size = selected
-    return name, data[offset:offset + size]
+    return name, data[offset : offset + size]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("g4pk", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--all", action="store_true", help="Extract every entry, not only G4MT payloads")
-    parser.add_argument("--entry", help="Extract one G4MT entry by G4MT index, full name, filename or stem")
+    parser.add_argument(
+        "--all", action="store_true", help="Extract every entry, not only G4MT payloads"
+    )
+    parser.add_argument(
+        "--entry", help="Extract one G4MT entry by G4MT index, full name, filename or stem"
+    )
     args = parser.parse_args()
 
     data = args.g4pk.read_bytes()
@@ -98,7 +106,7 @@ def main() -> None:
         return
     extracted = 0
     for name, offset, size in entries(data):
-        payload = data[offset:offset + size]
+        payload = data[offset : offset + size]
         if not args.all and payload[:4] != b"G4MT":
             continue
         safe_name = Path(name.replace("\\", "/")).name

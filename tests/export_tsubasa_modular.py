@@ -10,7 +10,11 @@ import bpy
 
 REPO = Path(__file__).resolve().parents[1]
 RAW = Path("/Volumes/BOBI/Proyectos Personales/VictoryRoad/DUMP_702/._work/raw/data")
-OUTPUT = Path(os.environ.get("G4_PORT_TEST_OUTPUT", "/Users/bobi/Documents/MiMod/tsubasa_c11010060_u11010060_v1"))
+OUTPUT = Path(
+    os.environ.get(
+        "G4_PORT_TEST_OUTPUT", "/Users/bobi/Documents/MiMod/tsubasa_c11010060_u11010060_v1"
+    )
+)
 sys.path.insert(0, str(REPO))
 import g4_port_addon as port
 
@@ -74,4 +78,7 @@ uniform_assignments = {
 configure(UNIFORM, uniform_assignments)
 uniform_report, _ = port.run_port(bpy.context, str(OUTPUT))
 
-print("TSUBASA_MODULAR_REPORT=" + json.dumps({"face": face_report, "uniform": uniform_report}, sort_keys=True))
+print(
+    "TSUBASA_MODULAR_REPORT="
+    + json.dumps({"face": face_report, "uniform": uniform_report}, sort_keys=True)
+)

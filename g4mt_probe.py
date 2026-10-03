@@ -110,8 +110,8 @@ def read_g4sk_data(path: Path) -> bytes:
     for index in range(file_count):
         entry_offset = header_size + u32(data, header_size + index * 4) * 4
         entry_size = u32(data, header_size + file_count * 4 + index * 4)
-        if data[entry_offset:entry_offset + 4] == b"G4SK":
-            return data[entry_offset:entry_offset + entry_size]
+        if data[entry_offset : entry_offset + 4] == b"G4SK":
+            return data[entry_offset : entry_offset + entry_size]
     return b""
 
 
@@ -125,7 +125,11 @@ def g4sk_name_table_offset(data: bytes, count: int) -> int:
             offset = u16(data, base + index * 2)
             absolute = base + offset
             name = cstr(data, absolute) if absolute < len(data) else ""
-            if offset < count * 2 or not name or any(ord(char) < 0x20 or ord(char) > 0x7E for char in name):
+            if (
+                offset < count * 2
+                or not name
+                or any(ord(char) < 0x20 or ord(char) > 0x7E for char in name)
+            ):
                 valid = False
                 break
         if valid:
@@ -244,17 +248,27 @@ def parse_g4mt(path: Path, skeleton: Path | None = None) -> dict:
     target_hashes = list(struct.unpack_from(f"<{target_count}I", data, target_hash_offset))
 
     clip_order = list(struct.unpack_from(f"<{clip_count}H", data, name_meta_offset))
-    name_offset_table, name_offsets, clip_names = find_name_table(data, name_meta_offset, clip_count)
+    name_offset_table, name_offsets, clip_names = find_name_table(
+        data, name_meta_offset, clip_count
+    )
 
     target_info_count = max((row[2] + (row[6] << 16) + row[3] for row in clip_rows), default=0)
     target_infos = []
     for index in range(target_info_count):
         offset = target_info_offset + index * 8
-        target_index, channel_start_low, channel_count, channel_start_high, reserved = struct.unpack_from("<HHBBH", data, offset)
+        target_index, channel_start_low, channel_count, channel_start_high, reserved = (
+            struct.unpack_from("<HHBBH", data, offset)
+        )
         if target_index >= target_count:
             raise ValueError(f"target-info {index} refers to missing target {target_index}")
         target_infos.append(
-            TargetInfo(index, target_index, channel_start_low + (channel_start_high << 16), channel_count, reserved)
+            TargetInfo(
+                index,
+                target_index,
+                channel_start_low + (channel_start_high << 16),
+                channel_count,
+                reserved,
+            )
         )
 
     channel_count = max((row.channel_start + row.channel_count for row in target_infos), default=0)
@@ -263,7 +277,9 @@ def parse_g4mt(path: Path, skeleton: Path | None = None) -> dict:
     key_count = 0
     for index in range(channel_count):
         offset = channel_offset + index * 20
-        encoding, key_start, entry_data_offset, entry_key_count = struct.unpack_from("<8sIII", data, offset)
+        encoding, key_start, entry_data_offset, entry_key_count = struct.unpack_from(
+            "<8sIII", data, offset
+        )
         key_count = max(key_count, key_start + entry_key_count)
         channel_headers.append((entry_key_count, list(encoding), key_start, entry_data_offset))
     raw_data_size = len(data) - data_offset
@@ -280,7 +296,7 @@ def parse_g4mt(path: Path, skeleton: Path | None = None) -> dict:
             encoding=entry[1],
             key_start=entry[2],
             data_offset=entry[3],
-            keys=all_keys[entry[2]:entry[2] + entry[0]],
+            keys=all_keys[entry[2] : entry[2] + entry[0]],
         )
         for index, entry in enumerate(channel_headers)
     ]
@@ -364,9 +380,13 @@ def parse_g4mt(path: Path, skeleton: Path | None = None) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("g4mt", type=Path, help="G4MT, G4MA or G4TP curve container")
-    parser.add_argument("--skeleton", type=Path, help="Optional companion G4SK used to resolve target hashes")
+    parser.add_argument(
+        "--skeleton", type=Path, help="Optional companion G4SK used to resolve target hashes"
+    )
     parser.add_argument("--output", type=Path, help="Write JSON to this path instead of stdout")
-    parser.add_argument("--compact", action="store_true", help="Omit target-info and channel arrays")
+    parser.add_argument(
+        "--compact", action="store_true", help="Omit target-info and channel arrays"
+    )
     args = parser.parse_args()
 
     result = parse_g4mt(args.g4mt, args.skeleton)
