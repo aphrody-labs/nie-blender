@@ -55,6 +55,75 @@ ADDON_ID = __name__
 MODEL_ID_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{1,3}\d{4,10})(?![A-Za-z0-9])")
 
 
+# Blender 4.4 introduced slotted (layered) Actions and Blender 5.0 removed the legacy
+# `Action.fcurves` view: F-curves now live in the channelbag of an action slot. These helpers
+# keep one code path for both models (the manifest still allows Blender 4.2).
+def layered_action(action) -> bool:
+    return hasattr(action, "slots")
+
+
+def action_channelbag(action, id_type: str = "OBJECT"):
+    """Return the F-curve container of `action` for data-blocks of `id_type`."""
+    if not layered_action(action):
+        return action
+    from bpy_extras import anim_utils
+
+    slot = next((slot for slot in action.slots if slot.target_id_type == id_type), None)
+    if slot is None:
+        slot = action.slots.new(id_type=id_type, name=action.name)
+    return anim_utils.action_ensure_channelbag_for_slot(action, slot)
+
+
+def action_fcurves(action) -> list:
+    """Every F-curve of `action`, across all of its slots."""
+    if not layered_action(action):
+        return list(action.fcurves)
+    return [
+        curve
+        for layer in action.layers
+        for strip in layer.strips
+        for channelbag in getattr(strip, "channelbags", ())
+        for curve in channelbag.fcurves
+    ]
+
+
+def find_action_fcurve(action, data_path: str, index: int = 0, id_type: str = "OBJECT"):
+    return action_channelbag(action, id_type).fcurves.find(data_path, index=index)
+
+
+def new_action_fcurve(
+    action, data_path: str, index: int = 0, group: str = "", id_type: str = "OBJECT"
+):
+    container = action_channelbag(action, id_type)
+    if container is action and not layered_action(action):
+        return action.fcurves.new(data_path, index=index, action_group=group)
+    return container.fcurves.new(data_path, index=index, group_name=group)
+
+
+def remove_action_fcurve(action, curve) -> None:
+    if not layered_action(action):
+        action.fcurves.remove(curve)
+        return
+    for layer in action.layers:
+        for strip in layer.strips:
+            for channelbag in getattr(strip, "channelbags", ()):
+                if channelbag.fcurves.find(curve.data_path, index=curve.array_index) == curve:
+                    channelbag.fcurves.remove(curve)
+                    return
+
+
+def assign_action(owner, action) -> None:
+    """Assign `action` to `owner` and bind the action slot made for its data-block type."""
+    owner.animation_data_create()
+    owner.animation_data.action = action
+    animation = owner.animation_data
+    if action is None or not layered_action(action) or animation.action_slot is not None:
+        return
+    slot = next((slot for slot in action.slots if slot.target_id_type == owner.id_type), None)
+    if slot is not None:
+        animation.action_slot = slot
+
+
 def default_python() -> str:
     for candidate in ("/usr/bin/python3", "/opt/homebrew/bin/python3", sys.executable):
         if candidate and Path(candidate).exists():
@@ -474,14 +543,14 @@ def animate_character_parts(
 def remove_nonroot_translation_curves(action, armature) -> int:
     """Avoid rest-pose translation/scale deltas stretching a substituted skeleton."""
     removed = 0
-    for curve in tuple(action.fcurves):
+    for curve in tuple(action_fcurves(action)):
         match = re.fullmatch(r'pose\.bones\["(.+)"\]\.(?:location|scale)', curve.data_path)
         if match is None:
             continue
         bone = armature.data.bones.get(match.group(1))
         if bone is None or bone.parent is None:
             continue
-        action.fcurves.remove(curve)
+        remove_action_fcurve(action, curve)
         removed += 1
     return removed
 
@@ -527,9 +596,9 @@ def extract_event_root_motion(
     frames = motion.get("frames") or []
     if track is None or rest is None or not frames:
         return 0
-    for curve in tuple(action.fcurves):
+    for curve in tuple(action_fcurves(action)):
         if curve.data_path.startswith(f'pose.bones["{root_name}"]'):
-            action.fcurves.remove(curve)
+            remove_action_fcurve(action, curve)
     locations, rotations, scales = [], [], []
     previous_rotation = None
     for index in range(len(frames)):
@@ -792,9 +861,9 @@ def append_curve_samples(
     key = (data_path, index)
     curve = cache.get(key)
     if curve is None:
-        curve = action.fcurves.find(data_path, index=index)
+        curve = find_action_fcurve(action, data_path, index)
         if curve is None:
-            curve = action.fcurves.new(data_path, index=index, action_group=group)
+            curve = new_action_fcurve(action, data_path, index, group)
         cache[key] = curve
     count = len(frames)
     if not count:
@@ -941,7 +1010,7 @@ def create_action(
         progress_callback=progress_callback,
     )
     armature.animation_data.action = None
-    armature.animation_data.action = action
+    assign_action(armature, action)
 
     action["g4_relative_rest_tracks"] = relative_rest_tracks
     return action, keyed_bones
@@ -1572,7 +1641,7 @@ def create_camera_animation(
         camera_data.keyframe_insert("lens", frame=frame, group="Camera Lens")
 
     for action in (transform_action, lens_action):
-        for fcurve in action.fcurves:
+        for fcurve in action_fcurves(action):
             for point in fcurve.keyframe_points:
                 point.interpolation = "LINEAR"
         action["g4cm_source"] = str(path)
@@ -1888,7 +1957,9 @@ def create_effect_g4ma_actions(
                         for component in range(len(curve["values"][0]) if curve["values"] else 0):
                             property_name = f"g4_g4ma_{track['target_hash']}_{curve['channel_index']}_{component}"
                             material[property_name] = curve["values"][0][component]
-                            fcurve = action.fcurves.new(data_path=f'["{property_name}"]')
+                            fcurve = new_action_fcurve(
+                                action, f'["{property_name}"]', id_type="MATERIAL"
+                            )
                             for frame, value in zip(motion["frames"], curve["values"]):
                                 point = fcurve.keyframe_points.insert(
                                     frame - start_frame + 1,
@@ -1898,7 +1969,7 @@ def create_effect_g4ma_actions(
                                 point.interpolation = (
                                     "CONSTANT" if curve["interpolation"] == "STEP" else "LINEAR"
                                 )
-                    if action.fcurves:
+                    if action_fcurves(action):
                         action_names.append(action.name)
                     else:
                         bpy.data.actions.remove(action)
@@ -2266,7 +2337,7 @@ def import_event_character_lighting(directory: Path, cut_starts: dict[str, int])
     for owner in (light_object, light_data, scene.world):
         animation = owner.animation_data
         if animation and animation.action:
-            for curve in animation.action.fcurves:
+            for curve in action_fcurves(animation.action):
                 for point in curve.keyframe_points:
                     point.interpolation = "CONSTANT"
 
@@ -2338,7 +2409,7 @@ def import_event_character_lighting(directory: Path, cut_starts: dict[str, int])
             animated_materials += 1
             animation = material.node_tree.animation_data
             if animation and animation.action:
-                for curve in animation.action.fcurves:
+                for curve in action_fcurves(animation.action):
                     for point in curve.keyframe_points:
                         point.interpolation = "CONSTANT"
     scene["g4_event_animated_materials"] = animated_materials
@@ -2607,8 +2678,8 @@ def animate_event_face_materials(
             continue
         action = bpy.data.actions.new(f"{actor}_{clip['name']}_{material.name}_Face")
         path_x = f'{mapping.path_from_id()}.inputs["Location"].default_value'
-        curve_x = action.fcurves.new(data_path=path_x, index=0)
-        curve_y = action.fcurves.new(data_path=path_x, index=1)
+        curve_x = new_action_fcurve(action, path_x, 0, id_type="NODETREE")
+        curve_y = new_action_fcurve(action, path_x, 1, id_type="NODETREE")
         previous = None
         for source_frame, value in zip(motion["frames"], values):
             state = int(round(value[0]))
@@ -2625,7 +2696,7 @@ def animate_event_face_materials(
             for curve, offset in ((curve_x, offset_x), (curve_y, offset_y)):
                 point = curve.keyframe_points.insert(frame, offset, options={"FAST"})
                 point.interpolation = "CONSTANT"
-        if not action.fcurves:
+        if not action_fcurves(action):
             bpy.data.actions.remove(action)
             continue
         tree = material.node_tree
@@ -2800,7 +2871,7 @@ def import_event_actor(
         if debug_log is not None:
             debug_log.append(
                 f"{actor}/{cut}: keyed={keyed}; frames={duration}; "
-                f"fcurves={len(action.fcurves)}; face_materials={face_materials}; strip_start={strip_start}"
+                f"fcurves={len(action_fcurves(action))}; face_materials={face_materials}; strip_start={strip_start}"
             )
         cut_frames.append((cut, strip_start))
         keyed_bones += keyed
@@ -2856,7 +2927,7 @@ def animate_event_actor_visibility(
             obj.keyframe_insert("hide_render", frame=frame)
         animation = obj.animation_data
         if animation and animation.action:
-            for curve in animation.action.fcurves:
+            for curve in action_fcurves(animation.action):
                 if curve.data_path not in {"hide_viewport", "hide_render"}:
                     continue
                 for point in curve.keyframe_points:
@@ -3596,7 +3667,7 @@ def create_p3lip_action(target, path: Path, frame_start: float = 1.0):
         target.keyframe_insert('["g4_lip_viseme"]', frame=frame, group="P3 Lip Sync")
         target.keyframe_insert('["g4_lip_weight"]', frame=frame, group="P3 Lip Sync")
         keyed += 1
-    for curve in action.fcurves:
+    for curve in action_fcurves(action):
         for point in curve.keyframe_points:
             point.interpolation = "CONSTANT" if "viseme" in curve.data_path else "LINEAR"
     target.animation_data.action = previous_action

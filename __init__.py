@@ -627,6 +627,15 @@ def run_exporter(model_path: str, prefs: G4ImporterPreferences, target_armature=
     return summary
 
 
+def collada_import_available() -> bool:
+    """Blender 5.0 removed COLLADA; `bpy.ops.wm.collada_import` is then an unbound stub."""
+    try:
+        bpy.ops.wm.collada_import.get_rna_type()
+    except (AttributeError, KeyError, RuntimeError):
+        return False
+    return True
+
+
 def import_collada(dae_path: Path) -> set[str]:
     before = set(bpy.data.objects)
     bpy.ops.wm.collada_import(filepath=str(dae_path))
@@ -1022,10 +1031,10 @@ def make_debug_text(summary: dict, lines: list[str]) -> None:
 
 
 def write_debug_log(summary: dict, lines: list[str]) -> None:
-    dae = Path(summary.get("dae", ""))
-    if not dae:
+    dae_text = summary.get("dae") or ""
+    if not dae_text:
         return
-    log_path = dae.with_suffix(".g4_import_debug.log")
+    log_path = Path(dae_text).with_suffix(".g4_import_debug.log")
     log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     summary["debug_log"] = str(log_path)
 
@@ -1247,14 +1256,23 @@ def link_to_input(links, output, input_socket) -> None:
     links.new(output, input_socket)
 
 
+def set_surface_render_method(material, method: str) -> None:
+    # EEVEE Next (Blender 4.2+) renders from `surface_render_method`; `blend_method` remains
+    # the legacy EEVEE and Workbench setting.
+    if hasattr(material, "surface_render_method"):
+        material.surface_render_method = method
+
+
 def set_transparent_material(material) -> None:
     material.blend_method = "BLEND"
+    set_surface_render_method(material, "BLENDED")
     material.use_screen_refraction = False
     material.show_transparent_back = True
 
 
 def set_alpha_clip_material(material, threshold: float = 0.35) -> None:
     material.blend_method = "CLIP"
+    set_surface_render_method(material, "DITHERED")
     material.alpha_threshold = threshold
     material.show_transparent_back = False
 
@@ -2998,8 +3016,7 @@ def import_g4_model(
         import_method = "native"
     else:
         dae_path = Path(summary.get("dae", "")).resolve()
-        collada_import = getattr(bpy.ops.wm, "collada_import", None)
-        if not dae_path.exists() or collada_import is None:
+        if not dae_path.is_file() or not collada_import_available():
             raise RuntimeError(
                 "Native G4 mesh payload was not generated and Collada fallback is unavailable"
             )

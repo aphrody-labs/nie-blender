@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from array import array
 from pathlib import Path
 
@@ -406,6 +407,111 @@ def arm_bind_segment_transforms(props) -> dict[str, list[float]]:
     return transforms
 
 
+COLLADA_NAMESPACE = "http://www.collada.org/2005/11/COLLADASchema"
+
+
+def collada_id(name: str, used: set[str]) -> str:
+    base = re.sub(r"[^0-9A-Za-z_.-]+", "_", name).strip("_") or "mesh"
+    if not (base[0].isalpha() or base[0] == "_"):
+        base = f"_{base}"
+    candidate = base
+    suffix = 1
+    while candidate in used:
+        candidate = f"{base}_{suffix:03d}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+def collada_floats(values) -> str:
+    return " ".join(f"{value:.9g}" for value in values)
+
+
+def collada_float_source(parent, source_id: str, values: list[float], params: str):
+    source = ET.SubElement(parent, "source", id=source_id)
+    array = ET.SubElement(
+        source, "float_array", id=f"{source_id}-array", count=str(len(values))
+    )
+    array.text = collada_floats(values)
+    technique = ET.SubElement(source, "technique_common")
+    accessor = ET.SubElement(
+        technique,
+        "accessor",
+        source=f"#{source_id}-array",
+        count=str(len(values) // len(params)),
+        stride=str(len(params)),
+    )
+    for param in params:
+        ET.SubElement(accessor, "param", name=param, type="float")
+
+
+def collada_corner_normals(mesh) -> list:
+    if hasattr(mesh, "corner_normals"):
+        return [normal.vector for normal in mesh.corner_normals]
+    mesh.calc_normals_split()
+    return [loop.normal for loop in mesh.loops]
+
+
+def write_collada_geometry(
+    library, mesh, geometry_id: str, name: str, materials: list, matrix: Matrix
+) -> None:
+    """Write `mesh` in world space: `matrix` is baked into positions and normals."""
+    geometry = ET.SubElement(library, "geometry", id=geometry_id, name=name)
+    mesh_node = ET.SubElement(geometry, "mesh")
+    normal_matrix = matrix.to_3x3().inverted_safe().transposed()
+    mirrored = matrix.to_3x3().determinant() < 0.0
+    positions = [component for vertex in mesh.vertices for component in matrix @ vertex.co]
+    normals = [
+        component
+        for normal in collada_corner_normals(mesh)
+        for component in (normal_matrix @ normal).normalized()
+    ]
+    collada_float_source(mesh_node, f"{geometry_id}-positions", positions, "XYZ")
+    collada_float_source(mesh_node, f"{geometry_id}-normals", normals, "XYZ")
+    uv_layers = list(mesh.uv_layers)
+    for set_index, layer in enumerate(uv_layers):
+        uvs = [component for item in layer.data for component in item.uv]
+        collada_float_source(mesh_node, f"{geometry_id}-map-{set_index}", uvs, "ST")
+    vertices = ET.SubElement(mesh_node, "vertices", id=f"{geometry_id}-vertices")
+    ET.SubElement(vertices, "input", semantic="POSITION", source=f"#{geometry_id}-positions")
+
+    mesh.calc_loop_triangles()
+    by_material: dict[int, list] = {}
+    for triangle in mesh.loop_triangles:
+        by_material.setdefault(triangle.material_index, []).append(triangle)
+    for material_index in sorted(by_material):
+        triangles = by_material[material_index]
+        primitive = ET.SubElement(mesh_node, "triangles", count=str(len(triangles)))
+        material = materials[material_index] if 0 <= material_index < len(materials) else None
+        if material is not None:
+            primitive.set("material", f"{material.name}-material")
+        ET.SubElement(
+            primitive, "input", semantic="VERTEX", source=f"#{geometry_id}-vertices", offset="0"
+        )
+        ET.SubElement(
+            primitive, "input", semantic="NORMAL", source=f"#{geometry_id}-normals", offset="1"
+        )
+        for set_index in range(len(uv_layers)):
+            ET.SubElement(
+                primitive,
+                "input",
+                semantic="TEXCOORD",
+                source=f"#{geometry_id}-map-{set_index}",
+                offset="2",
+                set=str(set_index),
+            )
+        corners = []
+        for triangle in triangles:
+            corner_pairs = list(zip(triangle.vertices, triangle.loops))
+            if mirrored:
+                corner_pairs.reverse()
+            for vertex_index, loop_index in corner_pairs:
+                corners.extend(
+                    (vertex_index, loop_index, loop_index) if uv_layers else (vertex_index, loop_index)
+                )
+        ET.SubElement(primitive, "p").text = " ".join(str(value) for value in corners)
+
+
 def export_collada(
     path: Path,
     selected_only: bool,
@@ -413,71 +519,93 @@ def export_collada(
     apply_modifiers: bool,
     bake_current_pose: bool = False,
 ) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    kwargs = {
-        "filepath": str(path),
-        "selected": selected_only,
-        "apply_modifiers": apply_modifiers,
-        "triangulate": True,
-    }
-    if align_forward_to_y:
-        kwargs.update(
-            {
-                "apply_global_orientation": True,
-                "export_global_forward_selection": "Y",
-                "export_global_up_selection": "Z",
-                "export_object_transformation_type_selection": "matrix",
-            }
-        )
-    if not bake_current_pose:
-        bpy.ops.wm.collada_export(**kwargs)
-        return
+    """Write the source meshes as the COLLADA 1.4.1 document read by `g4_port.py`.
 
+    Blender 5.0 removed its built-in COLLADA exporter, so the add-on writes the subset that
+    `g4_port.parse_dae` consumes: one triangulated geometry per object (positions, corner
+    normals, every UV layer as a TEXCOORD set, material symbols) in world space, instanced by
+    identity visual-scene nodes so the result does not depend on a matrix storage order. Skin
+    weights travel in the `write_weights_json` sidecar. Blender's frame already has forward +Y
+    and up +Z, the G4 port orientation, so `align_forward_to_y` needs no extra rotation.
+    """
+    del align_forward_to_y
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # A previous interrupted export may have left its private collection behind.
     remove_pose_export_collection(bpy.data.collections.get("__G4PoseExport"))
-    collection = bpy.data.collections.new("__G4PoseExport")
-    bpy.context.scene.collection.children.link(collection)
-    original_selected = tuple(bpy.context.selected_objects)
-    original_active = bpy.context.view_layer.objects.active
+    view_layer_objects = bpy.context.view_layer.objects
+    sources = [obj for obj in mesh_objects(selected_only) if obj.name in view_layer_objects]
+    if bake_current_pose and not sources:
+        raise RuntimeError("No mesh objects were found to bake for export.")
+
+    exported: list[tuple[bpy.types.Object, bpy.types.Mesh, bool]] = []
+    collection = None
+    copied_meshes = []
     try:
-        depsgraph = bpy.context.evaluated_depsgraph_get()
-        sources = mesh_objects(selected_only)
-        if not sources:
-            raise RuntimeError("No mesh objects were found to bake for export.")
-        copies = []
-        for source in sources:
-            pose_source = source.copy()
-            pose_source.data = source.data.copy()
-            pose_source.matrix_world = source.matrix_world
-            collection.objects.link(pose_source)
-            if not apply_modifiers:
-                for modifier in pose_source.modifiers:
-                    if modifier.type != "ARMATURE":
-                        modifier.show_viewport = False
+        if bake_current_pose:
+            collection = bpy.data.collections.new("__G4PoseExport")
+            bpy.context.scene.collection.children.link(collection)
+            pose_sources = []
+            for source in sources:
+                pose_source = source.copy()
+                pose_source.data = source.data.copy()
+                copied_meshes.append(pose_source.data)
+                pose_source.matrix_world = source.matrix_world
+                collection.objects.link(pose_source)
+                if not apply_modifiers:
+                    for modifier in pose_source.modifiers:
+                        if modifier.type != "ARMATURE":
+                            modifier.show_viewport = False
+                pose_sources.append((source, pose_source))
             bpy.context.view_layer.update()
-            mesh = bpy.data.meshes.new_from_object(
-                pose_source.evaluated_get(depsgraph), depsgraph=depsgraph
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            for source, pose_source in pose_sources:
+                mesh = bpy.data.meshes.new_from_object(
+                    pose_source.evaluated_get(depsgraph), depsgraph=depsgraph
+                )
+                exported.append((source, mesh, True))
+        elif apply_modifiers:
+            depsgraph = bpy.context.evaluated_depsgraph_get()
+            for source in sources:
+                mesh = bpy.data.meshes.new_from_object(
+                    source.evaluated_get(depsgraph), depsgraph=depsgraph
+                )
+                exported.append((source, mesh, True))
+        else:
+            exported = [(source, source.data, False) for source in sources]
+
+        root = ET.Element("COLLADA", xmlns=COLLADA_NAMESPACE, version="1.4.1")
+        asset = ET.SubElement(root, "asset")
+        ET.SubElement(asset, "unit", name="meter", meter="1")
+        ET.SubElement(asset, "up_axis").text = "Z_UP"
+        geometries = ET.SubElement(root, "library_geometries")
+        scenes = ET.SubElement(root, "library_visual_scenes")
+        visual_scene = ET.SubElement(scenes, "visual_scene", id="Scene", name="Scene")
+        used_ids: set[str] = set()
+        for source, mesh, _ in exported:
+            node_id = collada_id(source.name, used_ids)
+            geometry_id = collada_id(f"{source.name}-mesh", used_ids)
+            materials = [slot.material for slot in source.material_slots]
+            write_collada_geometry(
+                geometries, mesh, geometry_id, source.name, materials, source.matrix_world
             )
-            copy = bpy.data.objects.new(source.name, mesh)
-            copy.matrix_world = source.matrix_world
-            collection.objects.link(copy)
-            copies.append(copy)
-        for obj in bpy.context.selected_objects:
-            obj.select_set(False)
-        for copy in copies:
-            copy.select_set(True)
-        bpy.context.view_layer.objects.active = copies[0]
-        kwargs["selected"] = True
-        kwargs["apply_modifiers"] = False
-        bpy.ops.wm.collada_export(**kwargs)
+            node = ET.SubElement(
+                visual_scene, "node", id=node_id, name=source.name, type="NODE"
+            )
+            ET.SubElement(node, "matrix", sid="transform").text = collada_floats(
+                value for row in Matrix.Identity(4) for value in row
+            )
+            ET.SubElement(node, "instance_geometry", url=f"#{geometry_id}", name=source.name)
+        scene = ET.SubElement(root, "scene")
+        ET.SubElement(scene, "instance_visual_scene", url="#Scene")
+        ET.ElementTree(root).write(path, encoding="utf-8", xml_declaration=True)
     finally:
-        for obj in tuple(bpy.context.selected_objects):
-            obj.select_set(False)
-        remove_pose_export_collection(bpy.data.collections.get("__G4PoseExport"))
-        for obj in original_selected:
-            if obj.name in bpy.data.objects:
-                obj.select_set(True)
-        if original_active is not None and original_active.name in bpy.data.objects:
-            bpy.context.view_layer.objects.active = original_active
+        for _, mesh, temporary in exported:
+            if temporary and mesh.users == 0:
+                bpy.data.meshes.remove(mesh)
+        remove_pose_export_collection(collection)
+        for mesh in copied_meshes:
+            if mesh.users == 0:
+                bpy.data.meshes.remove(mesh)
 
 
 def load_json(path: Path) -> dict:
